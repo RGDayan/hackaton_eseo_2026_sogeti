@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Image Docker minimale : .next/standalone contient server.js et les seules dépendances utiles.
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {

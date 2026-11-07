@@ -56,7 +56,7 @@ Prisma 7 ne lance pas le seed après un `migrate reset`, d'où la deuxième comm
 
 ## Comptes de démonstration
 
-Ces comptes sont fictifs. Le mot de passe est le même pour tous : `Demo2026!`.
+Ces comptes sont fictifs. Le mot de passe est le même pour tous : `Demo2026!` en local. En production, il est remplacé par la valeur de `MDP_COMPTES_DEMO` (voir [Déploiement](#déploiement)).
 
 | Identifiant | Rôle |
 | --- | --- |
@@ -114,6 +114,18 @@ Pour ajouter une ville : créez-la dans `/admin` avec le compte super-admin. Cr�
 | `users` | Pseudo et identifiant Keycloak, sans autre donnée personnelle |
 
 Le schéma se trouve dans `prisma/schema.prisma`. Les données de démonstration (Dijon Métropole et Grand Besançon Métropole) sont dans `prisma/seed.ts`.
+
+## Déploiement
+
+La production tourne sur un seul serveur avec Docker Compose : application, PostgreSQL, Keycloak et Caddy (HTTPS automatique), derrière une seule URL publique. Keycloak y est servi sous `/kc`. Pas besoin de nom de domaine : `<ip>.sslip.io` suffit. Le mode démo y est désactivé.
+
+```bash
+cd deploiement
+cp .env.example .env   # domaine et secrets
+docker compose up -d --build
+```
+
+Le guide complet (Oracle Cloud, VPS OVH, vérifications avant la démo, maintenance, dépannage) est dans [deploiement/README.md](deploiement/README.md).
 
 ## Bon à savoir
 
