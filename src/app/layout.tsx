@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Fraunces, Instrument_Sans } from "next/font/google";
 import { MenuUtilisateur } from "@/components/menu-utilisateur";
-import { SelecteurVille } from "@/components/selecteur-ville";
-import { NomVille, ThemeVille } from "@/components/theme-ville";
+import { BandeauVille } from "@/components/bandeau-ville";
+import { ThemeVille } from "@/components/theme-ville";
 import "./globals.css";
 
 const affiche = Fraunces({ variable: "--font-affiche", subsets: ["latin"] });
@@ -22,26 +22,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <ThemeVille />
         </Suspense>
+        {/* Bandeau de la ville courante, aux couleurs de la ville (contraste vérifié avec le blanc). */}
+        <div className="bg-foret text-white">
+          <Suspense fallback={<div className="h-8" />}>
+            <BandeauVille />
+          </Suspense>
+        </div>
         <header className="sticky top-0 z-20 border-b border-trait bg-papier/95 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-            <div className="flex items-baseline gap-2">
-              <Link href="/" className="font-titre text-xl font-semibold text-foret">
-                Place Commune
-              </Link>
-              <Suspense fallback={null}>
-                <span className="hidden md:inline">
-                  <NomVille />
-                </span>
-              </Suspense>
-            </div>
+            <Link href="/" className="font-titre text-xl font-semibold text-foret">
+              Place Commune
+            </Link>
             <nav className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
               <Link href="/dashboard" className="text-sm font-semibold hover:text-foret hover:underline">
                 <span className="sm:hidden">Chiffres</span>
                 <span className="hidden sm:inline">Tableau de bord</span>
               </Link>
-              <Suspense fallback={<div className="h-9 w-40" />}>
-                <SelecteurVille />
-              </Suspense>
               <Suspense fallback={<div className="h-10 w-24" />}>
                 <MenuUtilisateur />
               </Suspense>

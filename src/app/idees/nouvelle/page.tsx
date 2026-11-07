@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FormulaireSuggestion } from "@/components/formulaire-suggestion";
 import { getReferentiels } from "@/lib/queries";
@@ -42,8 +43,10 @@ async function VilleConcernee() {
   const ville = await getVilleCourante();
   return (
     <p className="mt-1 text-sm text-gris">
-      Ville : <strong className="text-encre">{ville.nom}</strong>. Pour une autre ville, changez-la dans
-      l&apos;en-tête.
+      Ville : <strong className="text-encre">{ville.nom}</strong>.{" "}
+      <Link href="/villes" className="text-foret underline-offset-2 hover:underline">
+        Changer de ville
+      </Link>
     </p>
   );
 }

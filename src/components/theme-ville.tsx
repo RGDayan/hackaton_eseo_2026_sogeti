@@ -19,9 +19,3 @@ export async function ThemeVille() {
 
   return <style>{`:root{${css}}`}</style>;
 }
-
-/** Nom de la ville courante, affiché à côté du nom de l'application. */
-export async function NomVille() {
-  const ville = await getVilleCourante();
-  return <span className="text-sm font-semibold text-gris">{ville.nom}</span>;
-}

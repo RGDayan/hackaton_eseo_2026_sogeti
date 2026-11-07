@@ -11,7 +11,7 @@ Ce fichier récapitule le projet, ce qui a été fait et ce qui reste à faire. 
 Les habitants proposent des idées pour leur quartier, les situent sur une carte, y joignent des documents et votent pour ou contre celles de leurs voisins.
 
 - **Démo** : le **08/11/2026**, oral de **5 minutes**. Villes de démo : **Dijon Métropole** et **Grand Besançon Métropole**.
-- **Une seule application pour toutes les villes.** L'habitant choisit sa ville dans l'en-tête, et le choix est gardé dans le cookie `pc_ville`. Tout est filtré par ville : fil, carte, filtres, chiffres, formulaire. La charte graphique de la ville est appliquée à l'interface.
+- **Une seule application pour toutes les villes.** L'habitant choisit sa ville via le bandeau en haut de page (« Changer de ville » ouvre la page `/villes`), et le choix est gardé dans le cookie `pc_ville`. Tout est filtré par ville : fil, carte, filtres, chiffres, formulaire. La charte graphique de la ville est appliquée à l'interface.
 - **Authentification Keycloak** (OIDC). Rôles :
   - **visiteur** (sans compte) : consulte ;
   - **habitant** (tout compte) : propose des idées et vote ;
@@ -27,7 +27,7 @@ Les habitants proposent des idées pour leur quartier, les situent sur une carte
   - HTML sémantique, labels, navigation au clavier, focus visible ;
   - contraste de 4,5:1 minimum, **vérifié à la saisie des couleurs** (`src/lib/contraste.ts`) ;
   - la carte n'est jamais le seul moyen d'accès ;
-  - le sélecteur de ville se valide par un bouton, sans envoi automatique au changement (WCAG 3.2.2).
+  - le choix de la ville se fait sur la page `/villes`, un bouton par ville, sans envoi automatique au changement (WCAG 3.2.2).
 - **Données personnelles minimales** : Keycloak ne demande qu'un identifiant et un mot de passe, l'e-mail est facultatif. L'application ne stocke que le pseudo et le `sub` Keycloak.
 
 ## État d'avancement
@@ -138,9 +138,10 @@ app/
   auth/{login,callback,logout}/route.ts        # flux OIDC
   api/pieces-jointes/[id]/route.ts, api/villes/[slug]/theme/route.ts
   actions.ts        # choisirVille, connexionDemo, voter, creerSuggestion, masquer/rétablir/supprimer
-  layout.tsx        # en-tête : nom de la ville, sélecteur, menu ; ThemeVille
+  layout.tsx        # bandeau de la ville, puis navbar (menu, Proposer) ; ThemeVille
+  villes/page.tsx   # choix de la ville
 components/         # carte, filtres, idee-card, vote, formulaire-suggestion, menu-utilisateur,
-                    # selecteur-ville, theme-ville, panneau-moderation, formulaire-admin
+                    # bandeau-ville, theme-ville, panneau-moderation, formulaire-admin
 lib/
   db.ts             # singleton Prisma
   queries.ts        # lectures, toujours filtrées par villeId et sans les idées masquées

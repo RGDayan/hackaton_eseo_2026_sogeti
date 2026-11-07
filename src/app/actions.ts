@@ -44,7 +44,7 @@ export async function connexionDemo(formData: FormData) {
   redirect(cheminSur(formData.get("next")));
 }
 
-/** Sélecteur de ville de l'en-tête : mémorise le choix dans un cookie, puis revient à l'accueil. */
+/** Choix de la ville (page /villes) : mémorise le choix dans un cookie, puis revient à l'accueil. */
 export async function choisirVille(formData: FormData) {
   const slug = String(formData.get("ville") ?? "").slice(0, 60);
   const ville = await prisma.ville.findUnique({ where: { slug }, select: { slug: true } });

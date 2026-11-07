@@ -2,7 +2,7 @@
 
 Plateforme de démocratie participative. Les habitants proposent des idées pour leur quartier, les situent sur une carte et votent pour ou contre celles de leurs voisins.
 
-Une seule application sert plusieurs villes : on choisit la sienne dans l'en-tête. Le contenu et les couleurs s'adaptent à la ville choisie. Tout le monde peut consulter les idées ; un compte suffit pour voter ou en proposer une.
+Une seule application sert plusieurs villes : on choisit la sienne via « Changer de ville », dans le bandeau en haut de page. Le contenu et les couleurs s'adaptent à la ville choisie. Tout le monde peut consulter les idées ; un compte suffit pour voter ou en proposer une.
 
 Next.js 16, PostgreSQL, Prisma 7, Tailwind CSS 4, Leaflet avec OpenStreetMap, Keycloak 26.
 

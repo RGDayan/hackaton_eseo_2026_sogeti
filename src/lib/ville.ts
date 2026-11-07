@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { prisma } from "@/lib/db";
 
-/** Cookie qui mémorise la ville choisie dans le sélecteur de l'en-tête. */
+/** Cookie qui mémorise la ville choisie sur la page /villes. */
 export const COOKIE_VILLE = "pc_ville";
 
 const champsVille = {
