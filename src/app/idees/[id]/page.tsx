@@ -2,9 +2,10 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CarteIdees } from "@/components/carte-lazy";
+import { Favori } from "@/components/favori";
 import { BadgeCategorie, dateFr } from "@/components/idee-card";
 import { Vote } from "@/components/vote";
-import { getMesVotes, getSuggestion } from "@/lib/queries";
+import { getMesFavoris, getMesVotes, getSuggestion } from "@/lib/queries";
 import { getUtilisateur } from "@/lib/session";
 
 export default function PageIdee({ params }: PageProps<"/idees/[id]">) {
@@ -32,7 +33,10 @@ async function Idee({ params }: { params: PageProps<"/idees/[id]">["params"] }) 
   const [idee, utilisateur] = await Promise.all([getSuggestion(id), getUtilisateur()]);
   if (!idee) notFound();
 
-  const mesVotes = await getMesVotes(utilisateur?.id, [id]);
+  const [mesVotes, mesFavoris] = await Promise.all([
+    getMesVotes(utilisateur?.id, [id]),
+    getMesFavoris(utilisateur?.id, [id]),
+  ]);
   const images = idee.piecesJointes.filter((p) => p.typeMime.startsWith("image/"));
   const documents = idee.piecesJointes.filter((p) => !p.typeMime.startsWith("image/"));
 
@@ -41,6 +45,9 @@ async function Idee({ params }: { params: PageProps<"/idees/[id]">["params"] }) 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gris">
         <BadgeCategorie nom={idee.categorie.nom} couleur={idee.categorie.couleur} />
         <span>{idee.localisation.nom}</span>
+        <span className="ml-auto">
+          <Favori suggestionId={idee.id} estFavori={mesFavoris.has(idee.id)} connecte={Boolean(utilisateur)} />
+        </span>
       </div>
       <h1 className="mt-3 font-titre text-3xl leading-tight font-semibold text-foret sm:text-4xl">{idee.titre}</h1>
       <p className="mt-2 text-sm text-gris">
