@@ -58,7 +58,8 @@
   font-size: 2.25rem;
   font-weight: 600;
   line-height: 1.1;
-  color: var(--pc-principale);
+  /* !important : le thème parent force du blanc (prévu pour son fond sombre) avec !important. */
+  color: var(--pc-principale) !important;
   text-align: center;
   text-transform: none;
   letter-spacing: normal;
