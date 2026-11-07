@@ -31,6 +31,7 @@ type Props = {
 
 export function IdeeCard({ idee, monVote, connecte, estFavori, afficherVille = false }: Props) {
   const nbPieces = idee._count.piecesJointes;
+  const nbCommentaires = idee._count.commentaires;
 
   return (
     <article className="rounded-2xl border border-trait bg-carte p-5">
@@ -77,6 +78,7 @@ export function IdeeCard({ idee, monVote, connecte, estFavori, afficherVille = f
       <p className="mt-3 text-xs text-gris">
         Par {idee.auteur.nickname}, le {dateFr(idee.createdAt)}
         {nbPieces > 0 && ` · ${nbPieces} document${nbPieces > 1 ? "s" : ""}`}
+        {nbCommentaires > 0 && ` · ${nbCommentaires} commentaire${nbCommentaires > 1 ? "s" : ""}`}
       </p>
     </article>
   );

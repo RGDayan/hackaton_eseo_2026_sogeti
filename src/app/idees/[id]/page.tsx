@@ -2,12 +2,13 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CarteIdees } from "@/components/carte-lazy";
+import { Commentaires } from "@/components/commentaires";
 import { Favori } from "@/components/favori";
 import { BadgeCategorie, dateFr } from "@/components/idee-card";
 import { PanneauModeration } from "@/components/panneau-moderation";
 import { Vote } from "@/components/vote";
 import { peutModerer } from "@/lib/droits";
-import { getMesFavoris, getMesVotes, getSuggestion } from "@/lib/queries";
+import { getMesFavoris, getMesVotes, getSuggestion, listerCommentaires } from "@/lib/queries";
 import { getUtilisateur } from "@/lib/session";
 
 export default function PageIdee({ params }: PageProps<"/idees/[id]">) {
@@ -38,9 +39,10 @@ async function Idee({ params }: { params: PageProps<"/idees/[id]">["params"] }) 
   const moderable = peutModerer(utilisateur, idee.localisation.ville.slug);
   if (idee.masquee && !moderable) notFound();
 
-  const [mesVotes, mesFavoris] = await Promise.all([
+  const [mesVotes, mesFavoris, commentaires] = await Promise.all([
     getMesVotes(utilisateur?.id, [id]),
     getMesFavoris(utilisateur?.id, [id]),
+    listerCommentaires(id),
   ]);
   const images = idee.piecesJointes.filter((p) => p.typeMime.startsWith("image/"));
   const documents = idee.piecesJointes.filter((p) => !p.typeMime.startsWith("image/"));
@@ -157,6 +159,13 @@ async function Idee({ params }: { params: PageProps<"/idees/[id]">["params"] }) 
           </div>
         </section>
       )}
+
+      <Commentaires
+        suggestionId={idee.id}
+        total={idee._count.commentaires}
+        commentaires={commentaires}
+        userId={utilisateur?.id ?? null}
+      />
     </article>
   );
 }

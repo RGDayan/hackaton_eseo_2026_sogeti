@@ -9,7 +9,7 @@ import { getUtilisateur, ouvrirSession, type Droits } from "@/lib/session";
 import { peutModerer } from "@/lib/droits";
 import { enregistrerFichiers, preparerFichiers, supprimerFichiers, supprimerFichiersParNom } from "@/lib/uploads";
 import { COOKIE_VILLE, getVilleCourante } from "@/lib/ville";
-import { cheminSur, schemaMotif, schemaSuggestion, type EtatSuggestion } from "@/lib/validation";
+import { cheminSur, schemaCommentaire, schemaMotif, schemaSuggestion, type EtatSuggestion } from "@/lib/validation";
 
 /** Comptes fictifs du mode démo : connexion directe, sans Keycloak (filet de sécurité pour l'oral). */
 const PROFILS_DEMO = {
@@ -134,6 +134,57 @@ export async function definirFavori(suggestionId: number, actif: boolean): Promi
     if (e instanceof Prisma.PrismaClientKnownRequestError) return { statut: "erreur" };
     throw e;
   }
+
+  revalidatePath("/", "layout");
+  return { statut: "ok" };
+}
+
+export type ResultatCommentaire = {
+  statut: "ok" | "non-connecte" | "invalide" | "erreur";
+  message?: string;
+};
+
+export async function ajouterCommentaire(suggestionId: number, contenu: string): Promise<ResultatCommentaire> {
+  if (!Number.isInteger(suggestionId)) return { statut: "erreur" };
+
+  const user = await getUtilisateur();
+  if (!user) return { statut: "non-connecte" };
+
+  const resultat = schemaCommentaire.safeParse(contenu);
+  if (!resultat.success) return { statut: "invalide", message: resultat.error.issues[0].message };
+
+  // Une idée masquée n'accepte de commentaires que de la modération de sa ville.
+  const idee = await prisma.suggestion.findUnique({
+    where: { id: suggestionId },
+    select: { masquee: true, localisation: { select: { ville: { select: { slug: true } } } } },
+  });
+  if (!idee || (idee.masquee && !peutModerer(user, idee.localisation.ville.slug))) return { statut: "erreur" };
+
+  try {
+    await prisma.commentaire.create({
+      data: { contenu: resultat.data, auteurId: user.id, suggestionId },
+    });
+  } catch (e) {
+    // Idée supprimée entre-temps (clé étrangère) : rien n'est enregistré.
+    if (e instanceof Prisma.PrismaClientKnownRequestError) return { statut: "erreur" };
+    throw e;
+  }
+
+  revalidatePath("/", "layout");
+  return { statut: "ok" };
+}
+
+/** Seul l'auteur peut supprimer son commentaire : la condition est dans la requête elle-même. */
+export async function supprimerCommentaire(commentaireId: number): Promise<ResultatCommentaire> {
+  if (!Number.isInteger(commentaireId)) return { statut: "erreur" };
+
+  const user = await getUtilisateur();
+  if (!user) return { statut: "non-connecte" };
+
+  const { count } = await prisma.commentaire.deleteMany({
+    where: { id: commentaireId, auteurId: user.id },
+  });
+  if (count === 0) return { statut: "erreur" };
 
   revalidatePath("/", "layout");
   return { statut: "ok" };
