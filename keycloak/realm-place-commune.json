@@ -12,8 +12,7 @@
   "rememberMe": true,
   "internationalizationEnabled": true,
   "supportedLocales": [
-    "fr",
-    "en"
+    "fr"
   ],
   "defaultLocale": "fr",
   "bruteForceProtected": true,
@@ -212,5 +211,6 @@
         }
       }
     ]
-  }
+  },
+  "loginTheme": "place-commune"
 }

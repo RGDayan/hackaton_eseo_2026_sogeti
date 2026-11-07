@@ -22,6 +22,8 @@ services:
     volumes:
       # Realm importé au premier démarrage (ignoré s'il existe déjà en base).
       - ./keycloak/realm-place-commune.json:/opt/keycloak/data/import/realm-place-commune.json:ro
+      # Thème des pages de connexion (styles de l'application + charte de la ville courante).
+      - ./keycloak/themes/place-commune:/opt/keycloak/themes/place-commune:ro
     depends_on:
       keycloak-db:
         condition: service_healthy

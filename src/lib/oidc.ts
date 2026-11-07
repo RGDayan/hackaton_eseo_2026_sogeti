@@ -42,7 +42,7 @@ export function getConfig() {
 }
 
 /** Prépare la redirection vers Keycloak et mémorise l'état du flux dans un cookie signé. */
-export async function urlConnexion(suivant: string, inscription = false) {
+export async function urlConnexion(suivant: string, inscription = false, ville?: string) {
   const config = await getConfig();
   const verifier = client.randomPKCECodeVerifier();
   const state = client.randomState();
@@ -69,6 +69,8 @@ export async function urlConnexion(suivant: string, inscription = false) {
     state,
     nonce,
     ui_locales: "fr",
+    // Lu par le thème Keycloak (keycloak/themes/place-commune) pour appliquer la charte de la ville.
+    ...(ville && { ville }),
   });
   // Keycloak ouvre directement le formulaire d'inscription sur ce point d'entrée.
   if (inscription) url.pathname = url.pathname.replace(/\/auth$/, "/registrations");
