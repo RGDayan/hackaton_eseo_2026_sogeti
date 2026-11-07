@@ -4,6 +4,7 @@ import { CarteIdees } from "@/components/carte-lazy";
 import { Filtres } from "@/components/filtres";
 import { IdeeCard } from "@/components/idee-card";
 import {
+  getMesFavoris,
   getMesVotes,
   getReferentiels,
   getStatistiques,
@@ -72,6 +73,11 @@ async function Fil({ searchParams }: { searchParams: PageProps<"/">["searchParam
     suggestions.map((s) => s.id),
   );
 
+  const mesFavoris = await getMesFavoris(
+    utilisateur?.id,
+    suggestions.map((s) => s.id),
+  );
+
   const { localisations, categories, tags } = referentiels;
   const quartier = localisations.find((l) => l.slug === filtres.quartier) ?? localisations[0];
   const centre = quartier ?? { latitude: 46.6, longitude: 2.4 };
@@ -109,7 +115,13 @@ async function Fil({ searchParams }: { searchParams: PageProps<"/">["searchParam
         ) : (
           <div className="space-y-4">
             {suggestions.map((idee) => (
-              <IdeeCard key={idee.id} idee={idee} monVote={mesVotes[idee.id] ?? 0} connecte={Boolean(utilisateur)} />
+              <IdeeCard
+                key={idee.id}
+                idee={idee}
+                monVote={mesVotes[idee.id] ?? 0}
+                connecte={Boolean(utilisateur)}
+                estFavori={mesFavoris.has(idee.id)}
+              />
             ))}
           </div>
         )}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Favori } from "@/components/favori";
 import { Vote } from "@/components/vote";
 import type { SuggestionListee } from "@/lib/queries";
 
@@ -19,9 +20,9 @@ export function BadgeCategorie({ nom, couleur }: { nom: string; couleur: string 
   );
 }
 
-type Props = { idee: SuggestionListee; monVote: number; connecte: boolean };
+type Props = { idee: SuggestionListee; monVote: number; connecte: boolean; estFavori: boolean };
 
-export function IdeeCard({ idee, monVote, connecte }: Props) {
+export function IdeeCard({ idee, monVote, connecte, estFavori }: Props) {
   const nbPieces = idee._count.piecesJointes;
 
   return (
@@ -29,6 +30,9 @@ export function IdeeCard({ idee, monVote, connecte }: Props) {
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gris">
         <BadgeCategorie nom={idee.categorie.nom} couleur={idee.categorie.couleur} />
         <span>{idee.localisation.nom}</span>
+        <span className="ml-auto">
+          <Favori suggestionId={idee.id} estFavori={estFavori} connecte={connecte} />
+        </span>
       </div>
 
       <h2 className="mt-2.5 font-titre text-xl leading-snug font-semibold">

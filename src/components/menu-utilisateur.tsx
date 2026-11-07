@@ -15,6 +15,9 @@ export async function MenuUtilisateur() {
 
   return (
     <form action={seDeconnecter} className="flex items-center gap-3 text-sm">
+      <Link href="/favoris" className="font-semibold text-foret hover:underline">
+        Favoris
+      </Link>
       <span className="hidden max-w-40 truncate font-semibold sm:inline">{utilisateur.nickname}</span>
       <button type="submit" className="text-gris hover:text-encre hover:underline">
         Se déconnecter
