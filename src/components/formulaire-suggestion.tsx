@@ -16,24 +16,40 @@ import {
 
 type Props = {
   categories: { id: number; nom: string }[];
-  quartiers: (Point & { id: number; nom: string })[];
+  /** Quartiers de la ville courante, avec les catégories qui y sont proposées. */
+  quartiers: (Point & { id: number; nom: string; categorieIds: number[] })[];
+  centreVille: Point;
   tagsExistants: string[];
 };
 
-export function FormulaireSuggestion({ categories, quartiers, tagsExistants }: Props) {
+export function FormulaireSuggestion({ categories, quartiers, centreVille, tagsExistants }: Props) {
   const router = useRouter();
   const [etat, setEtat] = useState<EtatSuggestion>({});
   const [enCours, demarrer] = useTransition();
   const [quartierId, setQuartierId] = useState("");
+  const [categorieId, setCategorieId] = useState("");
   const [position, setPosition] = useState<Point | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [saisieTag, setSaisieTag] = useState("");
   const [erreurFichiers, setErreurFichiers] = useState("");
 
-  const centre = useMemo(() => {
-    const choisi = quartiers.find((q) => String(q.id) === quartierId) ?? quartiers[0];
-    return { latitude: choisi?.latitude ?? 46.6, longitude: choisi?.longitude ?? 2.4 };
-  }, [quartiers, quartierId]);
+  const quartierChoisi = quartiers.find((q) => String(q.id) === quartierId);
+
+  const centre = useMemo(
+    () => (quartierChoisi ? { latitude: quartierChoisi.latitude, longitude: quartierChoisi.longitude } : centreVille),
+    [quartierChoisi, centreVille],
+  );
+
+  // Seules les catégories proposées dans le quartier choisi sont disponibles.
+  const categoriesDuQuartier = quartierChoisi
+    ? categories.filter((c) => quartierChoisi.categorieIds.includes(c.id))
+    : [];
+
+  function changerQuartier(valeur: string) {
+    setQuartierId(valeur);
+    const suivant = quartiers.find((q) => String(q.id) === valeur);
+    if (!suivant?.categorieIds.includes(Number(categorieId))) setCategorieId("");
+  }
 
   function ajouterTag(valeur: string, liste = tags) {
     const tag = valeur.trim().replace(/^#/, "").toLowerCase();
@@ -80,6 +96,7 @@ export function FormulaireSuggestion({ categories, quartiers, tagsExistants }: P
       setTags([]);
       setPosition(null);
       setQuartierId("");
+      setCategorieId("");
       router.push(`/idees/${resultat.id}`);
     });
   }
@@ -114,23 +131,6 @@ export function FormulaireSuggestion({ categories, quartiers, tagsExistants }: P
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
-          <label htmlFor="categorieId" className="libelle">
-            Catégorie
-          </label>
-          <select id="categorieId" name="categorieId" defaultValue="" className="champ" aria-invalid={Boolean(erreurs.categorieId)}>
-            <option value="" disabled>
-              Choisir
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nom}
-              </option>
-            ))}
-          </select>
-          {erreurs.categorieId && <p className="erreur">{erreurs.categorieId}</p>}
-        </div>
-
-        <div>
           <label htmlFor="localisationId" className="libelle">
             Quartier
           </label>
@@ -138,7 +138,7 @@ export function FormulaireSuggestion({ categories, quartiers, tagsExistants }: P
             id="localisationId"
             name="localisationId"
             value={quartierId}
-            onChange={(e) => setQuartierId(e.target.value)}
+            onChange={(e) => changerQuartier(e.target.value)}
             className="champ"
             aria-invalid={Boolean(erreurs.localisationId)}
           >
@@ -152,6 +152,34 @@ export function FormulaireSuggestion({ categories, quartiers, tagsExistants }: P
             ))}
           </select>
           {erreurs.localisationId && <p className="erreur">{erreurs.localisationId}</p>}
+        </div>
+        <div>
+          <label htmlFor="categorieId" className="libelle">
+            Catégorie
+          </label>
+          <select
+            id="categorieId"
+            name="categorieId"
+            value={categorieId}
+            onChange={(e) => setCategorieId(e.target.value)}
+            disabled={!quartierChoisi}
+            aria-describedby="aide-categorie"
+            className="champ disabled:opacity-60"
+            aria-invalid={Boolean(erreurs.categorieId)}
+          >
+            <option value="" disabled>
+              {quartierChoisi ? "Choisir" : "Choisissez d'abord un quartier"}
+            </option>
+            {categoriesDuQuartier.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nom}
+              </option>
+            ))}
+          </select>
+          <p id="aide-categorie" className="mt-1.5 text-sm text-gris">
+            Les catégories dépendent du quartier.
+          </p>
+          {erreurs.categorieId && <p className="erreur">{erreurs.categorieId}</p>}
         </div>
       </div>
 

@@ -1,0 +1,163 @@
+/*
+ * Thème Place Commune pour les pages de connexion Keycloak (PatternFly 5).
+ * Les couleurs --pc-principale* sont remplacées par celles de la ville courante (js/ville.js).
+ * Polices hébergées ici : aucun appel à un service tiers (Google Fonts…).
+ */
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("../fonts/fraunces-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("../fonts/instrument-sans-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+:root {
+  /* Palette de l'application (src/app/globals.css) */
+  --pc-papier: #f7f2e8;
+  --pc-carte: #fffdf8;
+  --pc-encre: #1c2b24;
+  --pc-gris: #58645c;
+  --pc-trait: #e2d9c8;
+  --pc-tomate: #c43d22;
+  /* Charte par défaut, remplacée par celle de la ville */
+  --pc-principale: #1f4d3a;
+  --pc-principale-foncee: #163a2b;
+  --pc-accent: #f2b632;
+
+  --pf-v5-global--FontFamily--text: "Instrument Sans", system-ui, sans-serif;
+  --pf-v5-global--FontFamily--heading: "Fraunces", Georgia, serif;
+  --pf-v5-global--Color--100: var(--pc-encre);
+  --pf-v5-global--Color--200: var(--pc-gris);
+  --pf-v5-global--BorderColor--100: var(--pc-trait);
+  --pf-v5-global--primary-color--100: var(--pc-principale);
+  --pf-v5-global--primary-color--200: var(--pc-principale-foncee);
+  --pf-v5-global--link--Color: var(--pc-principale);
+  --pf-v5-global--link--Color--hover: var(--pc-principale-foncee);
+  --pf-v5-global--danger-color--100: var(--pc-tomate);
+  --pf-v5-global--danger-color--200: var(--pc-tomate);
+  --keycloak-card-top-color: var(--pc-principale);
+}
+
+.login-pf body,
+#keycloak-bg {
+  background: var(--pc-papier);
+  color: var(--pc-encre);
+  font-family: var(--pf-v5-global--FontFamily--text);
+}
+
+/* En-tête : nom de l'application, puis nom de la ville */
+#kc-header-wrapper {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1.1;
+  /* !important : le thème parent force du blanc (prévu pour son fond sombre) avec !important. */
+  color: var(--pc-principale) !important;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.pc-ville {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: "Instrument Sans", system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pc-gris);
+}
+
+/* Carte du formulaire */
+.pf-v5-c-login__main {
+  background: var(--pc-carte);
+  border: 1px solid var(--pc-trait);
+  border-radius: 1rem;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.pf-v5-c-login__main-header {
+  border-top: 4px solid var(--pc-principale);
+}
+
+#kc-page-title {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  color: var(--pc-principale);
+}
+
+/* Champs */
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--BorderRadius: 0.75rem;
+  --pf-v5-c-form-control--before--BorderColor: var(--pc-trait);
+  --pf-v5-c-form-control--after--BorderColor: var(--pc-trait);
+  --pf-v5-c-form-control--hover--after--BorderBottomColor: var(--pc-principale);
+  --pf-v5-c-form-control--focus--after--BorderBottomColor: var(--pc-principale);
+  background: var(--pc-carte);
+  border-radius: 0.75rem;
+}
+
+.pf-v5-c-form__label-text {
+  font-weight: 600;
+}
+
+/* Boutons arrondis, comme .bouton-plein / .bouton-contour de l'application */
+.pf-v5-c-button.pf-m-primary {
+  --pf-v5-c-button--m-primary--BackgroundColor: var(--pc-principale);
+  --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--pc-principale-foncee);
+  --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--pc-principale-foncee);
+  --pf-v5-c-button--m-primary--active--BackgroundColor: var(--pc-principale-foncee);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.pf-v5-c-button.pf-m-secondary {
+  --pf-v5-c-button--m-secondary--Color: var(--pc-encre);
+  --pf-v5-c-button--m-secondary--after--BorderColor: var(--pc-trait);
+  --pf-v5-c-button--m-secondary--hover--after--BorderColor: var(--pc-principale);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+a,
+.pf-v5-c-button.pf-m-link {
+  color: var(--pc-principale);
+}
+
+/* Focus visible, comme dans l'application */
+:focus-visible {
+  outline: 2px solid var(--pc-principale);
+  outline-offset: 2px;
+}
+
+/* Messages d'erreur et d'information */
+.pf-v5-c-alert {
+  border-radius: 0.75rem;
+}
+
+.pf-v5-c-helper-text__item.pf-m-error,
+.kc-feedback-text {
+  color: var(--pc-tomate);
+}
+
+/* Lien de retour vers l'application */
+.pc-retour {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--pc-gris);
+}
+
+.pc-retour:hover {
+  color: var(--pc-encre);
+  text-decoration: underline;
+}

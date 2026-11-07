@@ -31,9 +31,11 @@ export function lireFiltres(params: ParamsUrl): Filtres {
   };
 }
 
-function clauseWhere(f: Filtres): Prisma.SuggestionWhereInput {
+/** Toujours limité à la ville courante, et sans les idées masquées par la modération. */
+function clauseWhere(f: Filtres, villeId: number): Prisma.SuggestionWhereInput {
   return {
-    ...(f.quartier && { localisation: { slug: f.quartier } }),
+    masquee: false,
+    localisation: { villeId, ...(f.quartier && { slug: f.quartier }) },
     ...(f.categorie && { categorie: { slug: f.categorie } }),
     ...(f.tag && { tags: { some: { nom: f.tag } } }),
     ...(f.q && {
@@ -54,14 +56,14 @@ const champsCarte = {
   createdAt: true,
   auteur: { select: { nickname: true } },
   categorie: { select: { nom: true, couleur: true } },
-  localisation: { select: { nom: true } },
+  localisation: { select: { nom: true, ville: { select: { nom: true, slug: true } } } },
   tags: { select: { nom: true }, orderBy: { nom: "asc" } },
   _count: { select: { piecesJointes: true, commentaires: true } },
 } satisfies Prisma.SuggestionSelect;
 
-export async function listerSuggestions(f: Filtres) {
+export async function listerSuggestions(f: Filtres, villeId: number) {
   await connection();
-  const where = clauseWhere(f);
+  const where = clauseWhere(f, villeId);
   const orderBy: Prisma.SuggestionOrderByWithRelationInput[] =
     f.tri === "mieux-notees" ? [{ score: "desc" }, { createdAt: "desc" }] : [{ createdAt: "desc" }];
 
@@ -81,10 +83,10 @@ export async function listerSuggestions(f: Filtres) {
 export type SuggestionListee = Awaited<ReturnType<typeof listerSuggestions>>["suggestions"][number];
 
 /** Toutes les idées filtrées qui ont une position, pas seulement celles de la page courante. */
-export async function listerEpingles(f: Filtres) {
+export async function listerEpingles(f: Filtres, villeId: number) {
   await connection();
   const lignes = await prisma.suggestion.findMany({
-    where: { ...clauseWhere(f), latitude: { not: null }, longitude: { not: null } },
+    where: { ...clauseWhere(f, villeId), latitude: { not: null }, longitude: { not: null } },
     orderBy: { score: "desc" },
     take: MAX_EPINGLES,
     select: {
@@ -117,6 +119,8 @@ export async function getSuggestion(id: number) {
       ...champsCarte,
       latitude: true,
       longitude: true,
+      masquee: true,
+      motifMasquage: true,
       piecesJointes: {
         select: { id: true, nomOriginal: true, typeMime: true, taille: true },
         orderBy: { id: "asc" },
@@ -125,22 +129,53 @@ export async function getSuggestion(id: number) {
   });
 }
 
-export async function getReferentiels() {
+/** Quartiers de la ville (avec leurs catégories), catégories et tags utilisés dans la ville. */
+export async function getReferentiels(villeId: number) {
   await connection();
-  const [categories, localisations, tags] = await Promise.all([
-    prisma.categorie.findMany({ orderBy: { nom: "asc" } }),
-    prisma.localisation.findMany({ orderBy: { nom: "asc" } }),
-    prisma.tag.findMany({ orderBy: { nom: "asc" } }),
+  const [localisations, categories, tags] = await Promise.all([
+    prisma.localisation.findMany({
+      where: { villeId },
+      orderBy: { nom: "asc" },
+      select: {
+        id: true,
+        nom: true,
+        slug: true,
+        latitude: true,
+        longitude: true,
+        categories: { select: { id: true } },
+      },
+    }),
+    prisma.categorie.findMany({
+      where: { localisations: { some: { villeId } } },
+      orderBy: { nom: "asc" },
+    }),
+    prisma.tag.findMany({
+      where: { suggestions: { some: { masquee: false, localisation: { villeId } } } },
+      orderBy: { nom: "asc" },
+    }),
   ]);
-  return { categories, localisations, tags };
+  return {
+    localisations: localisations.map(({ categories: liees, ...l }) => ({
+      ...l,
+      categorieIds: liees.map((c) => c.id),
+    })),
+    categories,
+    tags,
+  };
 }
 
-export async function getStatistiques() {
+export async function getStatistiques(villeId: number) {
   await connection();
+  const dansLaVille = { masquee: false, localisation: { villeId } } satisfies Prisma.SuggestionWhereInput;
   const [idees, votes, voisins] = await Promise.all([
-    prisma.suggestion.count(),
-    prisma.vote.count(),
-    prisma.user.count(),
+    prisma.suggestion.count({ where: dansLaVille }),
+    prisma.vote.count({ where: { suggestion: dansLaVille } }),
+    // Voisins : habitants qui ont proposé ou voté dans la ville.
+    prisma.user.count({
+      where: {
+        OR: [{ suggestions: { some: dansLaVille } }, { votes: { some: { suggestion: dansLaVille } } }],
+      },
+    }),
   ]);
   return { idees, votes, voisins };
 }
@@ -169,7 +204,8 @@ export async function getMesFavoris(userId: number | undefined, ids: number[]) {
 export async function listerFavoris(userId: number) {
   await connection();
   const lignes = await prisma.favori.findMany({
-    where: { userId },
+    // Toutes villes confondues, sans les idées masquées par la modération.
+    where: { userId, suggestion: { masquee: false } },
     orderBy: { createdAt: "desc" },
     select: { suggestion: { select: champsCarte } },
   });

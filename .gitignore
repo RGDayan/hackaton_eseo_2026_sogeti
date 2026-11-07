@@ -45,6 +45,11 @@ next-env.d.ts
 
 # client Prisma genere
 /src/generated/
+/generated/
+/.vscode/
 
 # modele de configuration a versionner
 !.env.example
+
+# Documents de travail locaux
+/gitignore/

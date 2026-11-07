@@ -1,3 +1,5 @@
+// Données de démonstration 100 % fictives (pseudos, idées, votes).
+// Les noms de quartiers et de communes sont publics ; les coordonnées sont approximatives.
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
@@ -16,15 +18,62 @@ const categories = [
   { nom: "Sport & loisirs", slug: "sport-loisirs", couleur: "#b3261e" },
 ];
 
-// Quartiers de démonstration : remplacez-les par les vôtres, le reste de l'appli s'adapte.
-const quartiers = [
-  { nom: "Centre-ville", slug: "centre-ville", ville: "Angers", latitude: 47.4712, longitude: -0.5518 },
-  { nom: "La Doutre", slug: "la-doutre", ville: "Angers", latitude: 47.474, longitude: -0.559 },
-  { nom: "Belle-Beille", slug: "belle-beille", ville: "Angers", latitude: 47.479, longitude: -0.601 },
-  { nom: "Saint-Serge", slug: "saint-serge", ville: "Angers", latitude: 47.483, longitude: -0.546 },
-  { nom: "Monplaisir", slug: "monplaisir", ville: "Angers", latitude: 47.492, longitude: -0.53 },
-  { nom: "Lac de Maine", slug: "lac-de-maine", ville: "Angers", latitude: 47.456, longitude: -0.589 },
-  { nom: "La Roseraie", slug: "la-roseraie", ville: "Angers", latitude: 47.448, longitude: -0.545 },
+const toutes = categories.map((c) => c.slug);
+const sauf = (...exclues: string[]) => toutes.filter((s) => !exclues.includes(s));
+
+type Quartier = { nom: string; slug: string; latitude: number; longitude: number; categories: string[] };
+
+type Ville = {
+  nom: string;
+  slug: string;
+  latitude: number;
+  longitude: number;
+  zoom: number;
+  // Couleurs vérifiées : contraste ≥ 4,5:1 sur le fond papier et avec un texte blanc.
+  couleurPrincipale: string;
+  couleurPrincipaleFoncee: string;
+  couleurAccent: string;
+  quartiers: Quartier[];
+};
+
+const villes: Ville[] = [
+  {
+    nom: "Dijon Métropole",
+    slug: "dijon",
+    latitude: 47.322,
+    longitude: 5.0415,
+    zoom: 12,
+    couleurPrincipale: "#8c1c2b",
+    couleurPrincipaleFoncee: "#6b1420",
+    couleurAccent: "#e0a526",
+    quartiers: [
+      { nom: "Centre-ville", slug: "centre-ville", latitude: 47.3216, longitude: 5.0415, categories: sauf("sport-loisirs") },
+      { nom: "Grésilles", slug: "gresilles", latitude: 47.333, longitude: 5.064, categories: toutes },
+      { nom: "Fontaine d'Ouche", slug: "fontaine-d-ouche", latitude: 47.315, longitude: 5.005, categories: toutes },
+      { nom: "Montchapet", slug: "montchapet", latitude: 47.333, longitude: 5.025, categories: sauf("commerces") },
+      { nom: "Université", slug: "universite", latitude: 47.313, longitude: 5.068, categories: sauf("commerces") },
+      { nom: "Chenôve", slug: "chenove", latitude: 47.293, longitude: 5.008, categories: toutes },
+      { nom: "Talant", slug: "talant", latitude: 47.337, longitude: 5.005, categories: sauf("commerces") },
+      { nom: "Quetigny", slug: "quetigny", latitude: 47.314, longitude: 5.106, categories: toutes },
+    ],
+  },
+  {
+    nom: "Grand Besançon Métropole",
+    slug: "besancon",
+    latitude: 47.2378,
+    longitude: 6.0241,
+    zoom: 13,
+    couleurPrincipale: "#1d4f8c",
+    couleurPrincipaleFoncee: "#163c6b",
+    couleurAccent: "#f2b632",
+    quartiers: [
+      { nom: "La Boucle", slug: "la-boucle", latitude: 47.238, longitude: 6.024, categories: sauf("sport-loisirs") },
+      { nom: "Battant", slug: "battant", latitude: 47.241, longitude: 6.018, categories: toutes },
+      { nom: "Chaprais", slug: "chaprais", latitude: 47.247, longitude: 6.033, categories: toutes },
+      { nom: "Planoise", slug: "planoise", latitude: 47.224, longitude: 5.97, categories: toutes },
+      { nom: "Saint-Ferjeux", slug: "saint-ferjeux", latitude: 47.229, longitude: 5.993, categories: sauf("commerces") },
+    ],
+  },
 ];
 
 const voisins = ["Camille", "Sasha", "Noa", "Yanis", "Inès", "Lou", "Malik", "Jade"];
@@ -42,127 +91,166 @@ type Idee = {
   ilYaJours: number;
 };
 
-const idees: Idee[] = [
-  {
-    titre: "Une piste cyclable continue le long de la Maine",
-    description:
-      "Aujourd'hui la piste s'interrompt à plusieurs endroits et oblige à rejoindre la route. Une liaison continue rendrait le trajet plus sûr pour les familles et pour celles et ceux qui vont au travail à vélo.",
-    categorie: "mobilite",
-    quartier: "la-doutre",
-    tags: ["vélo", "sécurité"],
-    position: [47.4755, -0.5565],
-    auteur: "Camille",
-    votes: [6, 1],
-    ilYaJours: 2,
-  },
-  {
-    titre: "Un jardin partagé au pied des immeubles",
-    description:
-      "La pelouse derrière la place pourrait accueillir une dizaine de bacs à cultiver ensemble. Les écoles voisines pourraient y animer des ateliers au printemps.",
-    categorie: "espaces-verts",
-    quartier: "monplaisir",
-    tags: ["jardin", "enfants", "lien social"],
-    position: [47.4925, -0.5285],
-    auteur: "Malik",
-    votes: [7, 0],
-    ilYaJours: 5,
-  },
-  {
-    titre: "Une boîte à livres près de l'arrêt de tram",
-    description:
-      "Une petite bibliothèque en libre accès, à l'abri de la pluie, pour échanger des livres en attendant le tram. Elle pourrait être fabriquée avec l'atelier bois du centre social.",
-    categorie: "culture",
-    quartier: "belle-beille",
-    tags: ["lecture", "lien social"],
-    position: [47.4797, -0.5985],
-    auteur: "Inès",
-    votes: [5, 1],
-    ilYaJours: 8,
-  },
-  {
-    titre: "Un frigo solidaire géré par les habitants",
-    description:
-      "Un réfrigérateur en libre-service, entretenu par un groupe de bénévoles, pour partager les invendus des commerçants et limiter le gaspillage alimentaire.",
-    categorie: "solidarite",
-    quartier: "saint-serge",
-    tags: ["anti-gaspi", "entraide"],
-    position: [47.4822, -0.5478],
-    auteur: "Lou",
-    votes: [4, 2],
-    ilYaJours: 11,
-  },
-  {
-    titre: "Plus de bancs ombragés autour du lac",
-    description:
-      "Le tour du lac manque d'endroits où s'asseoir à l'ombre, surtout pour les personnes âgées. Quelques bancs sous les arbres existants suffiraient à rendre la promenade plus agréable l'été.",
-    categorie: "espaces-verts",
-    quartier: "lac-de-maine",
-    tags: ["seniors", "été"],
-    position: [47.4575, -0.5915],
-    auteur: "Noa",
-    votes: [6, 0],
-    ilYaJours: 14,
-  },
-  {
-    titre: "Rendre piétonne la rue commerçante le samedi",
-    description:
-      "Fermer la rue aux voitures le samedi de 10 h à 18 h laisserait de la place aux terrasses et aux étals. Les riverains garderaient un accès à leur garage.",
-    categorie: "commerces",
-    quartier: "centre-ville",
-    tags: ["piéton", "marché"],
-    position: [47.4708, -0.5525],
-    auteur: "Yanis",
-    votes: [4, 4],
-    ilYaJours: 3,
-  },
-  {
-    titre: "Des cendriers et poubelles de tri aux arrêts de bus",
-    description:
-      "Les abords des arrêts sont souvent jonchés de mégots et d'emballages. Des équipements simples et un ramassage plus régulier amélioreraient vite les choses.",
-    categorie: "proprete",
-    quartier: "la-roseraie",
-    tags: ["tri", "mégots"],
-    position: [47.4492, -0.5462],
-    auteur: "Sasha",
-    votes: [5, 0],
-    ilYaJours: 6,
-  },
-  {
-    titre: "Un terrain multisport ouvert en soirée",
-    description:
-      "Le terrain ferme à 18 h alors que beaucoup de jeunes finissent les cours ou le travail à cette heure-là. Un éclairage avec minuterie permettrait de l'ouvrir jusqu'à 21 h.",
-    categorie: "sport-loisirs",
-    quartier: "belle-beille",
-    tags: ["jeunes", "éclairage"],
-    auteur: "Jade",
-    votes: [3, 3],
-    ilYaJours: 1,
-  },
-  {
-    titre: "Un concert de quartier chaque premier dimanche",
-    description:
-      "Inviter les musiciennes et musiciens amateurs du quartier à jouer sur la place, une fois par mois, avec une scène légère installée par les habitants.",
-    categorie: "culture",
-    quartier: "la-doutre",
-    tags: ["musique", "lien social"],
-    position: [47.4733, -0.5602],
-    auteur: "Sasha",
-    votes: [5, 2],
-    ilYaJours: 18,
-  },
-  {
-    titre: "Des arceaux à vélos devant l'école",
-    description:
-      "Les parents attachent leurs vélos aux grilles faute de place. Une dizaine d'arceaux abrités encouragerait les trajets à vélo et dégagerait le trottoir.",
-    categorie: "mobilite",
-    quartier: "la-roseraie",
-    tags: ["vélo", "enfants"],
-    position: [47.4471, -0.5436],
-    auteur: "Camille",
-    votes: [6, 1],
-    ilYaJours: 21,
-  },
-];
+const idees: Record<string, Idee[]> = {
+  dijon: [
+    {
+      titre: "Une piste cyclable continue le long du lac Kir",
+      description:
+        "La piste s'interrompt à plusieurs endroits entre Fontaine d'Ouche et le lac, et oblige à rejoindre la route. Une liaison continue rendrait le trajet plus sûr pour les familles.",
+      categorie: "mobilite",
+      quartier: "fontaine-d-ouche",
+      tags: ["vélo", "sécurité"],
+      position: [47.3195, 5.0045],
+      auteur: "Camille",
+      votes: [6, 1],
+      ilYaJours: 2,
+    },
+    {
+      titre: "Un jardin partagé au pied des immeubles",
+      description:
+        "Une parcelle inoccupée pourrait accueillir des bacs potagers entretenus par les habitants, avec un composteur collectif et un point d'eau.",
+      categorie: "espaces-verts",
+      quartier: "gresilles",
+      tags: ["jardin", "compost"],
+      position: [47.3338, 5.0655],
+      auteur: "Sasha",
+      votes: [7, 0],
+      ilYaJours: 5,
+    },
+    {
+      titre: "Des bancs ombragés place de la Libération",
+      description:
+        "En été, la place est très exposée. Quelques bancs à l'ombre d'arbres ou de voiles permettraient aux personnes âgées de s'y arrêter.",
+      categorie: "espaces-verts",
+      quartier: "centre-ville",
+      tags: ["accessibilité", "été"],
+      position: [47.3217, 5.0412],
+      auteur: "Noa",
+      votes: [5, 2],
+      ilYaJours: 8,
+    },
+    {
+      titre: "Une boîte à livres près du tram",
+      description:
+        "Une boîte à livres à l'arrêt de tram permettrait d'échanger des romans et des livres pour enfants pendant l'attente.",
+      categorie: "culture",
+      quartier: "universite",
+      tags: ["lecture", "tram"],
+      position: [47.3128, 5.0672],
+      auteur: "Yanis",
+      votes: [4, 0],
+      ilYaJours: 11,
+    },
+    {
+      titre: "Un marché de producteurs le samedi matin",
+      description:
+        "Un petit marché hebdomadaire avec des producteurs locaux redonnerait vie à la place centrale et éviterait de prendre la voiture.",
+      categorie: "commerces",
+      quartier: "chenove",
+      tags: ["circuit court", "marché"],
+      position: [47.2925, 5.0075],
+      auteur: "Inès",
+      votes: [6, 2],
+      ilYaJours: 3,
+    },
+    {
+      titre: "Un city-stade rénové",
+      description:
+        "Le terrain multisport est abîmé : filets déchirés, sol glissant. Une rénovation profiterait aux jeunes du quartier.",
+      categorie: "sport-loisirs",
+      quartier: "quetigny",
+      tags: ["jeunesse", "sport"],
+      position: [47.3145, 5.1065],
+      auteur: "Malik",
+      votes: [5, 1],
+      ilYaJours: 14,
+    },
+    {
+      titre: "Plus de poubelles de tri sur le plateau",
+      description:
+        "Les promeneurs du dimanche n'ont pas de poubelle de tri sur le chemin. Deux ou trois points de collecte éviteraient les déchets dans l'herbe.",
+      categorie: "proprete",
+      quartier: "talant",
+      tags: ["tri", "déchets"],
+      auteur: "Lou",
+      votes: [3, 1],
+      ilYaJours: 6,
+    },
+    {
+      titre: "Une épicerie solidaire éphémère",
+      description:
+        "Un local associatif pourrait accueillir une épicerie solidaire deux jours par semaine, en lien avec les associations du quartier.",
+      categorie: "solidarite",
+      quartier: "montchapet",
+      tags: ["entraide"],
+      position: [47.3335, 5.0245],
+      auteur: "Jade",
+      votes: [4, 2],
+      ilYaJours: 19,
+    },
+  ],
+  besancon: [
+    {
+      titre: "Une passerelle piétonne plus large vers Battant",
+      description:
+        "La passerelle est étroite pour les poussettes et les fauteuils roulants. Un élargissement ou un sens de circulation améliorerait le passage.",
+      categorie: "mobilite",
+      quartier: "battant",
+      tags: ["accessibilité", "piétons"],
+      position: [47.2405, 6.0195],
+      auteur: "Sasha",
+      votes: [6, 1],
+      ilYaJours: 4,
+    },
+    {
+      titre: "Des fontaines à eau dans la Boucle",
+      description:
+        "Il manque des points d'eau potable dans le centre. Deux fontaines aideraient les promeneurs et les touristes l'été.",
+      categorie: "proprete",
+      quartier: "la-boucle",
+      tags: ["été", "eau"],
+      position: [47.2382, 6.0245],
+      auteur: "Camille",
+      votes: [5, 0],
+      ilYaJours: 7,
+    },
+    {
+      titre: "Un festival de quartier aux Chaprais",
+      description:
+        "Une journée festive avec les commerçants, les écoles et les associations permettrait aux voisins de se rencontrer.",
+      categorie: "culture",
+      quartier: "chaprais",
+      tags: ["fête", "associations"],
+      position: [47.2468, 6.0328],
+      auteur: "Lou",
+      votes: [4, 1],
+      ilYaJours: 9,
+    },
+    {
+      titre: "Un parcours sportif dans le parc de Planoise",
+      description:
+        "Quelques agrès en libre accès le long des allées permettraient de faire du sport gratuitement, à tout âge.",
+      categorie: "sport-loisirs",
+      quartier: "planoise",
+      tags: ["sport", "santé"],
+      position: [47.2245, 5.9705],
+      auteur: "Malik",
+      votes: [7, 1],
+      ilYaJours: 12,
+    },
+    {
+      titre: "Un verger partagé à Saint-Ferjeux",
+      description:
+        "Planter quelques arbres fruitiers sur un terrain communal, avec une cueillette ouverte à tous et des ateliers pour les enfants.",
+      categorie: "espaces-verts",
+      quartier: "saint-ferjeux",
+      tags: ["jardin", "biodiversité"],
+      auteur: "Noa",
+      votes: [3, 0],
+      ilYaJours: 16,
+    },
+  ],
+};
 
 function joursAvant(jours: number) {
   return new Date(Date.now() - jours * 24 * 60 * 60 * 1000);
@@ -171,15 +259,6 @@ function joursAvant(jours: number) {
 async function main() {
   for (const c of categories) {
     await prisma.categorie.upsert({ where: { slug: c.slug }, update: c, create: c });
-  }
-  for (const q of quartiers) {
-    await prisma.localisation.upsert({ where: { slug: q.slug }, update: q, create: q });
-  }
-
-  // Les idées de démo ne sont ajoutées qu'à une base vide, pour ne jamais doubler de vraies données.
-  if ((await prisma.suggestion.count()) > 0) {
-    console.log("Référentiels à jour. Des idées existent déjà : données de démo ignorées.");
-    return;
   }
 
   const ids = new Map<string, number>();
@@ -193,37 +272,62 @@ async function main() {
     ids.set(nickname, user.id);
   }
 
-  for (const idee of idees) {
-    const [pour, contre] = idee.votes;
-    const suggestion = await prisma.suggestion.create({
-      data: {
-        titre: idee.titre,
-        description: idee.description,
-        latitude: idee.position?.[0],
-        longitude: idee.position?.[1],
-        votesPour: pour,
-        votesContre: contre,
-        score: pour - contre,
-        createdAt: joursAvant(idee.ilYaJours),
-        auteur: { connect: { id: ids.get(idee.auteur)! } },
-        categorie: { connect: { slug: idee.categorie } },
-        localisation: { connect: { slug: idee.quartier } },
-        tags: {
-          connectOrCreate: idee.tags.map((nom) => ({ where: { nom }, create: { nom } })),
+  for (const { quartiers, ...donneesVille } of villes) {
+    const ville = await prisma.ville.upsert({
+      where: { slug: donneesVille.slug },
+      update: donneesVille,
+      create: donneesVille,
+    });
+
+    const quartierIds = new Map<string, number>();
+    for (const { categories: cats, ...q } of quartiers) {
+      const liens = cats.map((slug) => ({ slug }));
+      const quartier = await prisma.localisation.upsert({
+        where: { villeId_slug: { villeId: ville.id, slug: q.slug } },
+        update: { ...q, categories: { set: liens } },
+        create: { ...q, villeId: ville.id, categories: { connect: liens } },
+      });
+      quartierIds.set(q.slug, quartier.id);
+    }
+
+    // Les idées de démo ne sont ajoutées qu'à une ville sans idée, pour ne jamais doubler de vraies données.
+    const existantes = await prisma.suggestion.count({ where: { localisation: { villeId: ville.id } } });
+    if (existantes > 0) {
+      console.log(`${ville.nom} : référentiels à jour, des idées existent déjà.`);
+      continue;
+    }
+
+    for (const idee of idees[ville.slug] ?? []) {
+      const [pour, contre] = idee.votes;
+      const suggestion = await prisma.suggestion.create({
+        data: {
+          titre: idee.titre,
+          description: idee.description,
+          latitude: idee.position?.[0],
+          longitude: idee.position?.[1],
+          votesPour: pour,
+          votesContre: contre,
+          score: pour - contre,
+          createdAt: joursAvant(idee.ilYaJours),
+          auteur: { connect: { id: ids.get(idee.auteur)! } },
+          categorie: { connect: { slug: idee.categorie } },
+          localisation: { connect: { id: quartierIds.get(idee.quartier)! } },
+          tags: {
+            connectOrCreate: idee.tags.map((nom) => ({ where: { nom }, create: { nom } })),
+          },
         },
-      },
-    });
+      });
 
-    await prisma.vote.createMany({
-      data: voisins.slice(0, pour + contre).map((nickname, i) => ({
-        userId: ids.get(nickname)!,
-        suggestionId: suggestion.id,
-        valeur: i < pour ? 1 : -1,
-      })),
-    });
+      await prisma.vote.createMany({
+        data: voisins.slice(0, pour + contre).map((nickname, i) => ({
+          userId: ids.get(nickname)!,
+          suggestionId: suggestion.id,
+          valeur: i < pour ? 1 : -1,
+        })),
+      });
+    }
+    console.log(`${ville.nom} : ${idees[ville.slug]?.length ?? 0} idées de démonstration ajoutées.`);
   }
-
-  console.log(`${idees.length} idées de démonstration ajoutées.`);
 }
 
 main()

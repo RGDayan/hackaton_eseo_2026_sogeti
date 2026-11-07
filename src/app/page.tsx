@@ -14,18 +14,22 @@ import {
   type Filtres as FiltresActifs,
 } from "@/lib/queries";
 import { getUtilisateur } from "@/lib/session";
+import { getVilleCourante } from "@/lib/ville";
 
 export default function Accueil({ searchParams }: PageProps<"/">) {
   return (
     <>
       <section className="grid gap-8 py-10 sm:py-14 lg:grid-cols-[1fr_auto] lg:items-end">
         <div className="max-w-2xl">
+          <Suspense fallback={<p className="h-5" />}>
+            <SurTitreVille />
+          </Suspense>
           <h1 className="font-titre text-4xl leading-tight font-semibold text-foret sm:text-6xl">
             Votre quartier s&apos;invente ici.
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-gris">
-            Proposez une amélioration, découvrez celles de vos voisins et dites ce que vous en pensez. Un simple
-            pseudo suffit pour participer.
+            Proposez une amélioration, découvrez celles de vos voisins et dites ce que vous en pensez. Un compte
+            suffit pour participer.
           </p>
         </div>
         <Suspense fallback={<div className="h-16 w-72" />}>
@@ -40,8 +44,14 @@ export default function Accueil({ searchParams }: PageProps<"/">) {
   );
 }
 
+async function SurTitreVille() {
+  const ville = await getVilleCourante();
+  return <p className="mb-2 text-sm font-semibold tracking-wide text-foret uppercase">{ville.nom}</p>;
+}
+
 async function Chiffres() {
-  const { idees, votes, voisins } = await getStatistiques();
+  const ville = await getVilleCourante();
+  const { idees, votes, voisins } = await getStatistiques(ville.id);
   const chiffres = [
     { valeur: idees, libelle: "idées" },
     { valeur: votes, libelle: "votes" },
@@ -62,10 +72,11 @@ async function Chiffres() {
 
 async function Fil({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   const filtres = lireFiltres(await searchParams);
+  const ville = await getVilleCourante();
   const [{ suggestions, total, pages }, epingles, referentiels, utilisateur] = await Promise.all([
-    listerSuggestions(filtres),
-    listerEpingles(filtres),
-    getReferentiels(),
+    listerSuggestions(filtres, ville.id),
+    listerEpingles(filtres, ville.id),
+    getReferentiels(ville.id),
     getUtilisateur(),
   ]);
   const mesVotes = await getMesVotes(
@@ -79,8 +90,10 @@ async function Fil({ searchParams }: { searchParams: PageProps<"/">["searchParam
   );
 
   const { localisations, categories, tags } = referentiels;
-  const quartier = localisations.find((l) => l.slug === filtres.quartier) ?? localisations[0];
-  const centre = quartier ?? { latitude: 46.6, longitude: 2.4 };
+  // Carte centrée sur le quartier filtré, sinon sur la ville.
+  const quartier = localisations.find((l) => l.slug === filtres.quartier);
+  const centre = quartier ?? ville;
+  const zoom = quartier ? 14 : ville.zoom;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
@@ -95,7 +108,7 @@ async function Fil({ searchParams }: { searchParams: PageProps<"/">["searchParam
 
       <aside className="lg:sticky lg:top-20 lg:order-2 lg:self-start" aria-label="Carte des idées">
         <div className="isolate h-72 overflow-hidden rounded-2xl border border-trait lg:h-[calc(100vh-7rem)]">
-          <CarteIdees epingles={epingles} centre={centre} zoom={quartier ? 13 : 5} />
+          <CarteIdees key={ville.slug} epingles={epingles} centre={centre} zoom={zoom} />
         </div>
       </aside>
 

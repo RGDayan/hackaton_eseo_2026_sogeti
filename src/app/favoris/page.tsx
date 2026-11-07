@@ -53,7 +53,7 @@ async function Favoris() {
       </p>
       <div className="space-y-4">
         {idees.map((idee) => (
-          <IdeeCard key={idee.id} idee={idee} monVote={mesVotes[idee.id] ?? 0} connecte estFavori />
+          <IdeeCard key={idee.id} idee={idee} monVote={mesVotes[idee.id] ?? 0} connecte estFavori afficherVille />
         ))}
       </div>
     </>

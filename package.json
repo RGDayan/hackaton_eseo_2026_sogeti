@@ -18,6 +18,7 @@
     "jose": "^6.2.15",
     "leaflet": "^1.9.4",
     "next": "16.4.5",
+    "openid-client": "^6.8.9",
     "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -38,5 +39,10 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.1": true,
+    "esbuild@0.28.2": true,
+    "prisma@7.10.1": true
   }
 }

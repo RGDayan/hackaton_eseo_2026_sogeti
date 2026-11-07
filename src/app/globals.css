@@ -64,3 +64,39 @@ body {
 .leaflet-container {
   font-family: inherit;
 }
+
+/* Tableau de bord : les barres poussent une fois à l'arrivée sur la page. */
+@keyframes pousse-v {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes pousse-h {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.barre-v {
+  transform-origin: bottom;
+  animation: pousse-v 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.barre-h {
+  transform-origin: left;
+  animation: pousse-h 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barre-v,
+  .barre-h {
+    animation: none;
+  }
+}
