@@ -16,14 +16,14 @@ export async function MenuUtilisateur() {
   return (
     <div className="flex items-center gap-3 text-sm">
       {estModerateur(utilisateur) && (
-        <Link href="/moderation" className="font-semibold text-foret hover:underline">
-          Modération
-        </Link>
-      )}
-      {utilisateur.estSuperAdmin && (
-        <Link href="/admin" className="font-semibold text-foret hover:underline">
-          Admin
-        </Link>
+        <>
+          <Link href="/moderation" className="font-semibold text-foret hover:underline">
+            Modération
+          </Link>
+          <Link href="/admin" className="font-semibold text-foret hover:underline">
+            Admin
+          </Link>
+        </>
       )}
       <span className="hidden max-w-40 truncate font-semibold sm:inline">{utilisateur.nickname}</span>
       {/* Route Handler : ferme aussi la session Keycloak. */}

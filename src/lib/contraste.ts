@@ -16,6 +16,8 @@ export function ratioContraste(a: string, b: string) {
 /** Fond de page (`--color-papier`) et texte des boutons pleins : la couleur principale doit contraster avec les deux. */
 export const FOND_PAPIER = "#f7f2e8";
 export const BLANC = "#ffffff";
+/** Fond des cartes (`--color-carte`), sur lequel s'affichent les badges de catégorie. */
+export const FOND_CARTE = "#fffdf8";
 export const CONTRASTE_MIN = 4.5;
 
 export function contrasteSuffisant(couleur: string) {
