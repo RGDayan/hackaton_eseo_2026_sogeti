@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CarteIdees } from "@/components/carte-lazy";
 import { BadgeCategorie, dateFr } from "@/components/idee-card";
+import { PanneauModeration } from "@/components/panneau-moderation";
 import { Vote } from "@/components/vote";
+import { peutModerer } from "@/lib/droits";
 import { getMesVotes, getSuggestion } from "@/lib/queries";
 import { getUtilisateur } from "@/lib/session";
 
@@ -31,6 +33,9 @@ async function Idee({ params }: { params: PageProps<"/idees/[id]">["params"] }) 
 
   const [idee, utilisateur] = await Promise.all([getSuggestion(id), getUtilisateur()]);
   if (!idee) notFound();
+  // Une idée masquée n'est visible que par la modération de sa ville.
+  const moderable = peutModerer(utilisateur, idee.localisation.ville.slug);
+  if (idee.masquee && !moderable) notFound();
 
   const mesVotes = await getMesVotes(utilisateur?.id, [id]);
   const images = idee.piecesJointes.filter((p) => p.typeMime.startsWith("image/"));
@@ -38,9 +43,16 @@ async function Idee({ params }: { params: PageProps<"/idees/[id]">["params"] }) 
 
   return (
     <article className="mt-6">
+      {idee.masquee && (
+        <p role="status" className="mb-4 rounded-xl bg-tomate/10 px-4 py-3 text-sm text-tomate">
+          Idée masquée par la modération : seuls les modérateurs la voient.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gris">
         <BadgeCategorie nom={idee.categorie.nom} couleur={idee.categorie.couleur} />
-        <span>{idee.localisation.nom}</span>
+        <span>
+          {idee.localisation.nom}, {idee.localisation.ville.nom}
+        </span>
       </div>
       <h1 className="mt-3 font-titre text-3xl leading-tight font-semibold text-foret sm:text-4xl">{idee.titre}</h1>
       <p className="mt-2 text-sm text-gris">
@@ -107,6 +119,8 @@ async function Idee({ params }: { params: PageProps<"/idees/[id]">["params"] }) 
           )}
         </section>
       )}
+
+      {moderable && <PanneauModeration id={idee.id} masquee={idee.masquee} motif={idee.motifMasquage} />}
 
       {idee.latitude !== null && idee.longitude !== null && (
         <section className="mt-8">

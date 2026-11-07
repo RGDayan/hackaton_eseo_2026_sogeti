@@ -5,16 +5,6 @@ export const MAX_FICHIERS = 3;
 export const TAILLE_MAX_FICHIER = 5 * 1024 * 1024;
 export const EXTENSIONS_ACCEPTEES = ".pdf,.png,.jpg,.jpeg,.webp,.docx";
 
-export const schemaPseudo = z
-  .string({ error: "Choisissez un pseudo." })
-  .trim()
-  .min(3, "Votre pseudo doit faire au moins 3 caractères.")
-  .max(24, "Votre pseudo doit faire au plus 24 caractères.")
-  .regex(
-    /^[\p{L}\p{N}][\p{L}\p{N} _.-]*$/u,
-    "Utilisez des lettres, des chiffres, des espaces, ou les signes _ . -",
-  );
-
 const schemaTag = z
   .string()
   .trim()
@@ -51,8 +41,6 @@ export const schemaSuggestion = z
     message: "La position sur la carte est incomplète.",
   });
 
-export type EtatConnexion = { erreur?: string };
-
 type ChampSuggestion = "titre" | "description" | "categorieId" | "localisationId" | "tags" | "fichiers" | "latitude";
 
 export type EtatSuggestion = {
@@ -68,3 +56,9 @@ export function cheminSur(valeur: unknown): string {
   if (!valeur.startsWith("/") || valeur.startsWith("//") || valeur.includes("\\")) return "/";
   return valeur;
 }
+
+export const schemaMotif = z
+  .string({ error: "Indiquez le motif du masquage." })
+  .trim()
+  .min(3, "Le motif doit faire au moins 3 caractères.")
+  .max(300, "Le motif doit faire au plus 300 caractères.");

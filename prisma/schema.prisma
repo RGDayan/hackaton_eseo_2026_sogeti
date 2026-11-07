@@ -13,6 +13,8 @@ model User {
   nickname    String   @db.VarChar(24)
   /// Pseudo en minuscules : garantit l'unicité sans tenir compte de la casse.
   nicknameKey String   @unique @map("nickname_key") @db.VarChar(24)
+  /// Identifiant Keycloak (`sub` du jeton). Absent pour les comptes du mode démo.
+  keycloakId  String?  @unique @map("keycloak_id") @db.VarChar(64)
   createdAt   DateTime @default(now()) @map("created_at")
 
   suggestions Suggestion[]
@@ -21,6 +23,27 @@ model User {
   @@map("users")
 }
 
+/// Une ville (ou métropole). L'application est unique : l'habitant choisit sa ville avec le sélecteur.
+model Ville {
+  id                      Int     @id @default(autoincrement())
+  nom                     String  @unique @db.VarChar(80)
+  slug                    String  @unique @db.VarChar(60)
+  /// Centre et zoom initiaux de la carte.
+  latitude                Float
+  longitude               Float
+  zoom                    Int     @default(12)
+  /// Charte graphique (#rrggbb), injectée en variables CSS. Contraste vérifié à la saisie.
+  couleurPrincipale       String  @map("couleur_principale") @db.VarChar(7)
+  couleurPrincipaleFoncee String  @map("couleur_principale_foncee") @db.VarChar(7)
+  couleurAccent           String  @map("couleur_accent") @db.VarChar(7)
+  logoUrl                 String? @map("logo_url") @db.VarChar(500)
+
+  localisations Localisation[]
+
+  @@map("villes")
+}
+
+/// Catégorie partagée entre villes, proposée dans les quartiers auxquels elle est rattachée.
 model Categorie {
   id      Int    @id @default(autoincrement())
   nom     String @unique @db.VarChar(60)
@@ -28,7 +51,8 @@ model Categorie {
   /// Couleur hexadécimale (#rrggbb) utilisée pour les badges et les épingles de la carte.
   couleur String @db.VarChar(7)
 
-  suggestions Suggestion[]
+  suggestions   Suggestion[]
+  localisations Localisation[]
 
   @@map("categories")
 }
@@ -42,48 +66,58 @@ model Tag {
   @@map("tags")
 }
 
-/// Un quartier, avec le point sur lequel centrer la carte.
+/// Un quartier ou une commune d'une ville, avec le point sur lequel centrer la carte.
 model Localisation {
   id        Int    @id @default(autoincrement())
-  nom       String @unique @db.VarChar(80)
-  slug      String @unique @db.VarChar(80)
-  ville     String @db.VarChar(80)
+  nom       String @db.VarChar(80)
+  slug      String @db.VarChar(80)
   latitude  Float
   longitude Float
+  villeId   Int    @map("ville_id")
 
+  ville       Ville        @relation(fields: [villeId], references: [id], onDelete: Restrict)
+  categories  Categorie[]
   suggestions Suggestion[]
 
+  @@unique([villeId, slug])
+  @@unique([villeId, nom])
   @@map("localisations")
 }
 
 /// Une idée proposée par un habitant.
 model Suggestion {
-  id             Int      @id @default(autoincrement())
-  titre          String   @db.VarChar(120)
+  id             Int       @id @default(autoincrement())
+  titre          String    @db.VarChar(120)
   description    String
   /// Position précise facultative : sans elle, l'idée n'apparaît pas sur la carte.
   latitude       Float?
   longitude      Float?
   /// Compteurs dénormalisés depuis `votes`, pour trier par score en SQL.
-  votesPour      Int      @default(0) @map("votes_pour")
-  votesContre    Int      @default(0) @map("votes_contre")
-  score          Int      @default(0)
-  createdAt      DateTime @default(now()) @map("created_at")
-  auteurId       Int      @map("auteur_id")
-  categorieId    Int      @map("categorie_id")
-  localisationId Int      @map("localisation_id")
+  votesPour      Int       @default(0) @map("votes_pour")
+  votesContre    Int       @default(0) @map("votes_contre")
+  score          Int       @default(0)
+  /// Modération : une idée masquée disparaît du fil, de la carte et des statistiques.
+  masquee        Boolean   @default(false)
+  motifMasquage  String?   @map("motif_masquage") @db.VarChar(300)
+  masqueeLe      DateTime? @map("masquee_le")
+  masqueeParId   Int?      @map("masquee_par_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  auteurId       Int       @map("auteur_id")
+  categorieId    Int       @map("categorie_id")
+  localisationId Int       @map("localisation_id")
 
-  auteur       User          @relation(fields: [auteurId], references: [id], onDelete: Cascade)
-  categorie    Categorie     @relation(fields: [categorieId], references: [id], onDelete: Restrict)
-  localisation Localisation  @relation(fields: [localisationId], references: [id], onDelete: Restrict)
-  tags         Tag[]
+  auteur        User          @relation(fields: [auteurId], references: [id], onDelete: Cascade)
+  categorie     Categorie     @relation(fields: [categorieId], references: [id], onDelete: Restrict)
+  localisation  Localisation  @relation(fields: [localisationId], references: [id], onDelete: Restrict)
+  tags          Tag[]
   piecesJointes PieceJointe[]
-  votes        Vote[]
+  votes         Vote[]
 
   @@index([createdAt])
   @@index([score])
   @@index([categorieId])
   @@index([localisationId])
+  @@index([masquee])
   @@map("suggestions")
 }
 
