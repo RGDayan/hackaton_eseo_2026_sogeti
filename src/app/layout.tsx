@@ -22,7 +22,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/" className="font-titre text-xl font-semibold text-foret">
               Place Commune
             </Link>
-            <nav className="flex items-center gap-3">
+            <nav className="flex items-center gap-3 sm:gap-4">
+              <Link href="/dashboard" className="text-sm font-semibold hover:text-foret hover:underline">
+                <span className="sm:hidden">Chiffres</span>
+                <span className="hidden sm:inline">Tableau de bord</span>
+              </Link>
               <Suspense fallback={<div className="h-10 w-24" />}>
                 <MenuUtilisateur />
               </Suspense>
