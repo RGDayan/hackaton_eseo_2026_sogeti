@@ -106,31 +106,19 @@ export async function getTableauDeBord(villeId: number) {
   };
 }
 
-/** Ce qui concerne l'habitant connecté : ses favorites (votes « pour ») et ses propres idées. */
+/** Les idées proposées par l'habitant connecté, et les votes qu'elles ont réunis. */
 export async function getEspacePerso(userId: number) {
   await connection();
 
-  const [favorites, miennes, votesDonnes] = await Promise.all([
-    // Toutes villes confondues, sans les idées masquées par la modération.
-    prisma.vote.findMany({
-      where: { userId, valeur: 1, suggestion: { masquee: false } },
-      orderBy: { createdAt: "desc" },
-      take: 60,
-      select: { suggestion: { select: selectResume } },
-    }),
-    prisma.suggestion.findMany({
-      where: { auteurId: userId, masquee: false },
-      orderBy: { createdAt: "desc" },
-      take: 60,
-      select: selectResume,
-    }),
-    prisma.vote.count({ where: { userId } }),
-  ]);
+  const miennes = await prisma.suggestion.findMany({
+    where: { auteurId: userId, masquee: false },
+    orderBy: { createdAt: "desc" },
+    take: 60,
+    select: selectResume,
+  });
 
   return {
-    favorites: favorites.map((v) => v.suggestion),
     miennes,
-    votesDonnes,
     votesRecus: miennes.reduce((total, i) => total + i.votesPour + i.votesContre, 0),
   };
 }

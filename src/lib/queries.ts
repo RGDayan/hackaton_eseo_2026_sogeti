@@ -58,7 +58,7 @@ const champsCarte = {
   categorie: { select: { nom: true, couleur: true } },
   localisation: { select: { nom: true, ville: { select: { nom: true, slug: true } } } },
   tags: { select: { nom: true }, orderBy: { nom: "asc" } },
-  _count: { select: { piecesJointes: true, commentaires: true } },
+  _count: { select: { piecesJointes: true, commentaires: true, favoris: true } },
 } satisfies Prisma.SuggestionSelect;
 
 export async function listerSuggestions(f: Filtres, villeId: number) {

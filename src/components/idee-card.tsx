@@ -42,7 +42,7 @@ export function IdeeCard({ idee, monVote, connecte, estFavori, afficherVille = f
           {afficherVille && `, ${idee.localisation.ville.nom}`}
         </span>
         <span className="ml-auto">
-          <Favori suggestionId={idee.id} estFavori={estFavori} connecte={connecte} />
+          <Favori suggestionId={idee.id} estFavori={estFavori} nombre={idee._count.favoris} connecte={connecte} />
         </span>
       </div>
 

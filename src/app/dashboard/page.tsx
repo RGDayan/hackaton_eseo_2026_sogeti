@@ -5,6 +5,7 @@ import { BadgeCategorie } from "@/components/idee-card";
 import { Anneau, BarresHorizontales } from "@/components/graphiques";
 import { getEspacePerso, getTableauDeBord, type IdeeResume } from "@/lib/dashboard";
 import { getUtilisateur } from "@/lib/session";
+import { redirect } from "next/navigation";
 import { getVilleCourante } from "@/lib/ville";
 
 export const metadata: Metadata = {
@@ -22,6 +23,9 @@ export default function PageTableauDeBord() {
   return (
     <>
       <section className="py-6 sm:py-10 lg:py-14">
+        <Link href="/" className="text-sm text-gris hover:text-encre hover:underline">
+          ← Toutes les idées
+        </Link>
         <Suspense fallback={<p className="h-5" />}>
           <NomVilleCourante />
         </Suspense>
@@ -29,9 +33,6 @@ export default function PageTableauDeBord() {
         <p className="mt-3 max-w-2xl text-base leading-relaxed sm:mt-4 sm:text-lg text-gris">
           Ce qui se propose, ce qui se vote et ce qui réunit le plus d&apos;habitants.
         </p>
-        <a href="#mes-favorites" className="bouton-contour mt-5 w-full sm:mt-6 sm:w-auto">
-          Mes idées favorites
-        </a>
       </section>
 
       <Suspense fallback={<SqueletteSynthese />}>
@@ -181,57 +182,30 @@ async function Synthese() {
 
 async function EspacePerso() {
   const utilisateur = await getUtilisateur();
-
-  if (!utilisateur) {
-    return (
-      <section id="mes-favorites" className="mt-8 scroll-mt-24 sm:mt-10">
-        <h2 className="font-titre text-2xl font-semibold sm:text-3xl">Vos idées favorites</h2>
-        <div className="mt-4 rounded-2xl border border-dashed border-trait p-6 text-center sm:p-10">
-          <p className="font-titre text-xl font-semibold">Retrouvez les idées que vous soutenez.</p>
-          <p className="mt-2 text-sm text-gris">
-            Choisissez un pseudo, votez « pour » une idée, et elle apparaît ici.
-          </p>
-          <Link href="/connexion?next=/dashboard" className="bouton-plein mt-4 w-full sm:w-auto">
-            Se connecter
-          </Link>
-        </div>
-      </section>
-    );
-  }
+  if (!utilisateur) redirect("/connexion?next=/dashboard");
 
   const perso = await getEspacePerso(utilisateur.id);
 
   return (
-    <section id="mes-favorites" className="mt-8 scroll-mt-24 sm:mt-10">
-      <h2 className="font-titre text-2xl font-semibold sm:text-3xl">Vos idées favorites</h2>
-      <p className="mt-2 max-w-2xl text-gris">
-        {utilisateur.nickname}, vous soutenez {pluriel(perso.favorites.length, "idée")} et en avez proposé{" "}
-        {perso.miennes.length}, qui {perso.miennes.length > 1 ? "ont" : "a"} réuni {pluriel(perso.votesRecus, "vote")}.
-        Une idée est favorite dès que vous votez « pour ».
-      </p>
+    <section id="mes-propositions" className="mt-8 scroll-mt-24 sm:mt-10">
+      <h2 className="font-titre text-2xl font-semibold sm:text-3xl">Vos propositions</h2>
 
-      {perso.favorites.length === 0 ? (
+      {perso.miennes.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-trait p-6 text-center sm:p-10">
-          <p className="font-titre text-xl font-semibold">Aucune favorite pour l&apos;instant.</p>
-          <p className="mt-2 text-sm text-gris">Parcourez les idées et votez « pour » celles qui vous plaisent.</p>
-          <Link href="/" className="bouton-plein mt-4 w-full sm:w-auto">
-            Voir les idées
+          <p className="font-titre text-xl font-semibold">Vous n&apos;avez pas encore proposé d&apos;idée.</p>
+          <p className="mt-2 text-sm text-gris">Une envie pour votre quartier ? Lancez la première.</p>
+          <Link href="/idees/nouvelle" className="bouton-plein mt-4 w-full sm:w-auto">
+            Proposer une idée
           </Link>
         </div>
       ) : (
-        <ListeIdees idees={perso.favorites} />
-      )}
-
-      <h3 className="mt-8 font-titre text-xl font-semibold sm:mt-10 sm:text-2xl">Vos propositions</h3>
-      {perso.miennes.length === 0 ? (
-        <p className="mt-2 text-sm text-gris">
-          Vous n&apos;avez pas encore proposé d&apos;idée.{" "}
-          <Link href="/idees/nouvelle" className="font-semibold text-foret hover:underline">
-            Lancer la première
-          </Link>
-        </p>
-      ) : (
-        <ListeIdees idees={perso.miennes} />
+        <>
+          <p className="mt-2 max-w-2xl text-gris">
+            {utilisateur.nickname}, vous avez proposé {pluriel(perso.miennes.length, "idée")}, qui{" "}
+            {perso.miennes.length > 1 ? "ont" : "a"} réuni {pluriel(perso.votesRecus, "vote")}.
+          </p>
+          <ListeIdees idees={perso.miennes} />
+        </>
       )}
     </section>
   );
