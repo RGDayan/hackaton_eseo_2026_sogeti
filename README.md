@@ -97,6 +97,7 @@ Pour ajouter une ville : créez-la dans `/admin` avec le compte super-admin. Cr�
 - **Realm** : le realm `place-commune` est importé depuis `keycloak/realm-place-commune.json` au **premier** démarrage. Si vous modifiez ce fichier ensuite, réimportez-le avec `docker compose down -v`, puis `docker compose up -d`. Attention, cela efface les comptes créés dans Keycloak.
 - **Inscription** : l'inscription est libre. Seuls un identifiant de 3 à 24 caractères et un mot de passe sont demandés ; l'e-mail est facultatif, sans nom ni prénom.
 - **Thème** : les pages de connexion utilisent le thème `keycloak/themes/place-commune`. Elles reprennent le style de l'application et les couleurs de la ville en cours, lues via `GET /api/villes/<slug>/theme`. Les polices sont hébergées dans le thème. En développement, une modification du CSS se voit en rafraîchissant la page.
+- **Keycloak ne démarre plus** (`error mounting … /opt/keycloak/themes/place-commune`) : cela arrive après être passé sur une branche sans le dossier `keycloak/themes`. Docker Desktop garde l'ancien dossier monté. Lancez `docker compose up -d --force-recreate keycloak`.
 
 ## Base de données
 
