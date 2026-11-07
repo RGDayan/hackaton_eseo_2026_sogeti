@@ -15,6 +15,9 @@ export async function MenuUtilisateur() {
 
   return (
     <div className="flex items-center gap-3 text-sm">
+      <Link href="/favoris" className="font-semibold text-foret hover:underline">
+        Favoris
+      </Link>
       {estModerateur(utilisateur) && (
         <>
           <Link href="/moderation" className="font-semibold text-foret hover:underline">

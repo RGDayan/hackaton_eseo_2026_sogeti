@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Favori } from "@/components/favori";
 import { Vote } from "@/components/vote";
 import type { SuggestionListee } from "@/lib/queries";
 
@@ -19,16 +20,29 @@ export function BadgeCategorie({ nom, couleur }: { nom: string; couleur: string 
   );
 }
 
-type Props = { idee: SuggestionListee; monVote: number; connecte: boolean };
+type Props = {
+  idee: SuggestionListee;
+  monVote: number;
+  connecte: boolean;
+  estFavori: boolean;
+  /** Affiche aussi la ville (listes qui mélangent plusieurs villes, comme les favoris). */
+  afficherVille?: boolean;
+};
 
-export function IdeeCard({ idee, monVote, connecte }: Props) {
+export function IdeeCard({ idee, monVote, connecte, estFavori, afficherVille = false }: Props) {
   const nbPieces = idee._count.piecesJointes;
 
   return (
     <article className="rounded-2xl border border-trait bg-carte p-5">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gris">
         <BadgeCategorie nom={idee.categorie.nom} couleur={idee.categorie.couleur} />
-        <span>{idee.localisation.nom}</span>
+        <span>
+          {idee.localisation.nom}
+          {afficherVille && `, ${idee.localisation.ville.nom}`}
+        </span>
+        <span className="ml-auto">
+          <Favori suggestionId={idee.id} estFavori={estFavori} connecte={connecte} />
+        </span>
       </div>
 
       <h2 className="mt-2.5 font-titre text-xl leading-snug font-semibold">

@@ -189,3 +189,25 @@ export async function getMesVotes(userId: number | undefined, ids: number[]) {
   });
   return Object.fromEntries(votes.map((v) => [v.suggestionId, v.valeur])) as Record<number, number>;
 }
+
+/** Parmi les idées données, celles que l'utilisateur a mises en favori. */
+export async function getMesFavoris(userId: number | undefined, ids: number[]) {
+  if (!userId || ids.length === 0) return new Set<number>();
+  const favoris = await prisma.favori.findMany({
+    where: { userId, suggestionId: { in: ids } },
+    select: { suggestionId: true },
+  });
+  return new Set(favoris.map((f) => f.suggestionId));
+}
+
+/** Toutes les idées favorites de l'utilisateur, la plus récemment ajoutée en premier. */
+export async function listerFavoris(userId: number) {
+  await connection();
+  const lignes = await prisma.favori.findMany({
+    // Toutes villes confondues, sans les idées masquées par la modération.
+    where: { userId, suggestion: { masquee: false } },
+    orderBy: { createdAt: "desc" },
+    select: { suggestion: { select: champsCarte } },
+  });
+  return lignes.map((l) => l.suggestion);
+}

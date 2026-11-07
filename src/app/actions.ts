@@ -111,6 +111,34 @@ export async function voter(suggestionId: number, valeur: 1 | -1): Promise<Resul
   return { statut: "ok" };
 }
 
+export type ResultatFavori = { statut: "ok" | "non-connecte" | "erreur" };
+
+/** Ajoute (actif = true) ou retire (actif = false) une idée des favoris. Idempotent : un double clic est sans effet. */
+export async function definirFavori(suggestionId: number, actif: boolean): Promise<ResultatFavori> {
+  if (!Number.isInteger(suggestionId) || typeof actif !== "boolean") return { statut: "erreur" };
+
+  const user = await getUtilisateur();
+  if (!user) return { statut: "non-connecte" };
+
+  try {
+    if (actif) {
+      await prisma.favori.createMany({
+        data: [{ userId: user.id, suggestionId }],
+        skipDuplicates: true,
+      });
+    } else {
+      await prisma.favori.deleteMany({ where: { userId: user.id, suggestionId } });
+    }
+  } catch (e) {
+    // Idée disparue entre-temps (clé étrangère) : rien n'est enregistré.
+    if (e instanceof Prisma.PrismaClientKnownRequestError) return { statut: "erreur" };
+    throw e;
+  }
+
+  revalidatePath("/", "layout");
+  return { statut: "ok" };
+}
+
 function lireTags(formData: FormData) {
   const tags = formData.getAll("tags").map((t) => String(t).trim().toLowerCase());
   return [...new Set(tags.filter(Boolean))];
