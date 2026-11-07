@@ -34,7 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 </span>
               </Suspense>
             </div>
-            <nav className="flex flex-wrap items-center justify-end gap-3">
+            <nav className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
+              <Link href="/dashboard" className="text-sm font-semibold hover:text-foret hover:underline">
+                <span className="sm:hidden">Chiffres</span>
+                <span className="hidden sm:inline">Tableau de bord</span>
+              </Link>
               <Suspense fallback={<div className="h-9 w-40" />}>
                 <SelecteurVille />
               </Suspense>
