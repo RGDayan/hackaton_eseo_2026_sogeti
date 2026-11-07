@@ -4,6 +4,7 @@ import { CONTRASTE_MIN, FOND_CARTE, HEX, contrasteSuffisant, ratioContraste } fr
 export const MAX_TAGS = 5;
 export const MAX_FICHIERS = 3;
 export const TAILLE_MAX_FICHIER = 5 * 1024 * 1024;
+export const COMMENTAIRE_MAX = 1000;
 export const EXTENSIONS_ACCEPTEES = ".pdf,.png,.jpg,.jpeg,.webp,.docx";
 
 const schemaTag = z
@@ -41,6 +42,12 @@ export const schemaSuggestion = z
     path: ["latitude"],
     message: "La position sur la carte est incomplète.",
   });
+
+export const schemaCommentaire = z
+  .string({ error: "Écrivez votre commentaire." })
+  .trim()
+  .min(2, "Votre commentaire doit faire au moins 2 caractères.")
+  .max(COMMENTAIRE_MAX, `Votre commentaire doit faire au plus ${COMMENTAIRE_MAX} caractères.`);
 
 type ChampSuggestion = "titre" | "description" | "categorieId" | "localisationId" | "tags" | "fichiers" | "latitude";
 
