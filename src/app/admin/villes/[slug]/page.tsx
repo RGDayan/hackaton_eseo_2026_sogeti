@@ -166,11 +166,19 @@ async function Contenu({ params, searchParams }: PropsContenu) {
         {user.estSuperAdmin && (
           <ul className="mt-4 space-y-3">
             {categories.map((c) => (
-              <li key={c.id} className="rounded-2xl border border-trait bg-carte p-4">
-                <FormulaireAdmin action={modifierCategorie} bouton="Enregistrer" variante="contour">
-                  <input type="hidden" name="categorieId" value={c.id} />
-                  <ChampsCategorie prefixe={`categorie-${c.id}`} categorie={c} />
-                </FormulaireAdmin>
+              <li key={c.id} className="rounded-2xl border border-trait bg-carte">
+                <details>
+                  <summary className="flex cursor-pointer items-center gap-3 p-4">
+                    <span aria-hidden className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: c.couleur }} />
+                    <span className="font-semibold">{c.nom}</span>
+                  </summary>
+                  <div className="border-t border-trait p-4">
+                    <FormulaireAdmin action={modifierCategorie} bouton="Enregistrer" variante="contour">
+                      <input type="hidden" name="categorieId" value={c.id} />
+                      <ChampsCategorie prefixe={`categorie-${c.id}`} categorie={c} />
+                    </FormulaireAdmin>
+                  </div>
+                </details>
               </li>
             ))}
           </ul>

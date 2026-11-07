@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Fraunces, Instrument_Sans } from "next/font/google";
-import { MenuUtilisateur } from "@/components/menu-utilisateur";
+import { Navigation } from "@/components/navigation";
 import { BandeauVille } from "@/components/bandeau-ville";
 import { ThemeVille } from "@/components/theme-ville";
 import "./globals.css";
@@ -29,22 +29,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </Suspense>
         </div>
         <header className="sticky top-0 z-20 border-b border-trait bg-papier/95 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-            <Link href="/" className="font-titre text-xl font-semibold text-foret">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3">
+            <Link href="/" className="font-titre text-lg font-semibold whitespace-nowrap text-foret sm:text-xl">
               Place Commune
             </Link>
-            <nav className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
-              <Link href="/dashboard" className="text-sm font-semibold text-foret hover:underline">
-                <span className="sm:hidden">Chiffres</span>
-                <span className="hidden sm:inline">Tableau de bord</span>
-              </Link>
-              <Suspense fallback={<div className="h-10 w-24" />}>
-                <MenuUtilisateur />
-              </Suspense>
-              <Link href="/idees/nouvelle" className="bouton-plein">
-                Proposer<span className="hidden sm:inline"> une idée</span>
-              </Link>
-            </nav>
+            <Suspense fallback={<div className="h-10 w-40" />}>
+              <Navigation />
+            </Suspense>
           </div>
         </header>
 

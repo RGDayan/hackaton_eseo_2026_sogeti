@@ -28,8 +28,8 @@ export default function Accueil({ searchParams }: PageProps<"/">) {
             Votre quartier s&apos;invente ici.
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-gris">
-            Proposez une amélioration, découvrez celles de vos voisins et dites ce que vous en pensez. Un simple
-            pseudo suffit pour participer.
+            Proposez une amélioration, découvrez celles de vos voisins et dites ce que vous en pensez. Un compte
+            suffit pour participer.
           </p>
         </div>
         <Suspense fallback={<div className="h-16 w-72" />}>

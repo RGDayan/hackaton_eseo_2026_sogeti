@@ -19,8 +19,8 @@ function soumettre(e: ChangeEvent<HTMLSelectElement>) {
 
 export function Filtres({ actifs, quartiers, categories, tags }: Props) {
   return (
-    <Form action="/" key={JSON.stringify(actifs)} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
+    <Form action="/" key={JSON.stringify(actifs)} className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <div className="col-span-2 flex gap-2 lg:col-span-4">
         <label htmlFor="recherche" className="sr-only">
           Rechercher une idée
         </label>

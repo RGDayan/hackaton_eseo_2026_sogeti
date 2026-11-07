@@ -19,10 +19,12 @@ function Champ({
   id,
   libelle,
   aide,
+  large = false,
   ...input
-}: { id: string; libelle: string; aide?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+}: { id: string; libelle: string; aide?: string; large?: boolean } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div>
+    // Mobile d'abord : grille de 2 colonnes ; les champs « larges » prennent toute la ligne sur petit écran.
+    <div className={large ? "col-span-2 sm:col-span-1" : undefined}>
       <label htmlFor={id} className="libelle">
         {libelle}
       </label>
@@ -57,14 +59,14 @@ const AIDE_SLUG = "Utilisé dans les adresses. Laissez vide pour le déduire du 
 export function ChampsVille({ prefixe, ville }: { prefixe: string; ville?: Ville }) {
   const p = (n: string) => `${prefixe}-${n}`;
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <Champ id={p("nom")} name="nom" libelle="Nom" defaultValue={ville?.nom} required maxLength={80} />
-      <Champ id={p("slug")} name="slug" libelle="Identifiant d'URL" defaultValue={ville?.slug} maxLength={60} aide={AIDE_SLUG} />
-      <Champ id={p("lat")} name="latitude" libelle="Latitude du centre" type="number" step="any" defaultValue={ville?.latitude} required />
-      <Champ id={p("lng")} name="longitude" libelle="Longitude du centre" type="number" step="any" defaultValue={ville?.longitude} required />
-      <Champ id={p("zoom")} name="zoom" libelle="Zoom de la carte" type="number" min={3} max={18} defaultValue={ville?.zoom ?? 12} required aide="De 3 (pays) à 18 (rue). 12 convient à une métropole." />
-      <Champ id={p("logo")} name="logoUrl" libelle="Adresse du logo (facultatif)" type="url" defaultValue={ville?.logoUrl ?? ""} maxLength={500} />
-      <fieldset className="sm:col-span-2">
+    <div className="grid grid-cols-2 gap-4">
+      <Champ id={p("nom")} name="nom" libelle="Nom" defaultValue={ville?.nom} required maxLength={80} large />
+      <Champ id={p("slug")} name="slug" libelle="Identifiant d'URL" defaultValue={ville?.slug} maxLength={60} aide={AIDE_SLUG} large />
+      <Champ id={p("lat")} name="latitude" libelle="Latitude" type="number" step="any" defaultValue={ville?.latitude} required />
+      <Champ id={p("lng")} name="longitude" libelle="Longitude" type="number" step="any" defaultValue={ville?.longitude} required />
+      <Champ id={p("zoom")} name="zoom" libelle="Zoom de la carte" type="number" min={3} max={18} defaultValue={ville?.zoom ?? 12} required aide="La carte s'ouvre sur la latitude et la longitude ci-dessus. Zoom de 3 (pays) à 18 (rue) ; 12 convient à une métropole." large />
+      <Champ id={p("logo")} name="logoUrl" libelle="Adresse du logo (facultatif)" type="url" defaultValue={ville?.logoUrl ?? ""} maxLength={500} large />
+      <fieldset className="col-span-2">
         <legend className="libelle">Charte graphique</legend>
         <div className="flex flex-wrap gap-6">
           <Couleur id={p("c1")} name="couleurPrincipale" libelle="Principale" valeur={ville?.couleurPrincipale ?? "#1f4d3a"} aide="Titres, liens, boutons." />
@@ -83,9 +85,9 @@ export function ChampsVille({ prefixe, ville }: { prefixe: string; ville?: Ville
 export function ChampsQuartier({ prefixe, quartier }: { prefixe: string; quartier?: Quartier }) {
   const p = (n: string) => `${prefixe}-${n}`;
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <Champ id={p("nom")} name="nom" libelle="Nom" defaultValue={quartier?.nom} required maxLength={80} />
-      <Champ id={p("slug")} name="slug" libelle="Identifiant d'URL" defaultValue={quartier?.slug} maxLength={60} aide={AIDE_SLUG} />
+    <div className="grid grid-cols-2 gap-4">
+      <Champ id={p("nom")} name="nom" libelle="Nom" defaultValue={quartier?.nom} required maxLength={80} large />
+      <Champ id={p("slug")} name="slug" libelle="Identifiant d'URL" defaultValue={quartier?.slug} maxLength={60} aide={AIDE_SLUG} large />
       <Champ id={p("lat")} name="latitude" libelle="Latitude" type="number" step="any" defaultValue={quartier?.latitude} required />
       <Champ id={p("lng")} name="longitude" libelle="Longitude" type="number" step="any" defaultValue={quartier?.longitude} required />
     </div>
@@ -95,9 +97,9 @@ export function ChampsQuartier({ prefixe, quartier }: { prefixe: string; quartie
 export function ChampsCategorie({ prefixe, categorie }: { prefixe: string; categorie?: Categorie }) {
   const p = (n: string) => `${prefixe}-${n}`;
   return (
-    <div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
-      <Champ id={p("nom")} name="nom" libelle="Nom" defaultValue={categorie?.nom} required maxLength={60} />
-      <Champ id={p("slug")} name="slug" libelle="Identifiant d'URL" defaultValue={categorie?.slug} maxLength={60} aide={AIDE_SLUG} />
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_1fr_auto]">
+      <Champ id={p("nom")} name="nom" libelle="Nom" defaultValue={categorie?.nom} required maxLength={60} large />
+      <Champ id={p("slug")} name="slug" libelle="Identifiant d'URL" defaultValue={categorie?.slug} maxLength={60} aide={AIDE_SLUG} large />
       <Couleur id={p("couleur")} name="couleur" libelle="Couleur" valeur={categorie?.couleur ?? "#1d6fa5"} />
     </div>
   );

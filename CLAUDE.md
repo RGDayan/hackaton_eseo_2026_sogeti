@@ -141,7 +141,7 @@ app/
   layout.tsx        # bandeau de la ville, puis navbar (menu, Proposer) ; ThemeVille
   villes/page.tsx   # choix de la ville
 components/         # carte, filtres, idee-card, vote, formulaire-suggestion, menu-utilisateur,
-                    # bandeau-ville, theme-ville, panneau-moderation, formulaire-admin
+                    # bandeau-ville, navigation, menu-mobile, theme-ville, panneau-moderation, formulaire-admin
 lib/
   db.ts             # singleton Prisma
   queries.ts        # lectures, toujours filtrées par villeId et sans les idées masquées
@@ -163,6 +163,7 @@ docker-compose.yml
 - **Écritures** : Server Actions, suivies de `revalidatePath("/", "layout")`.
 - **Droits revérifiés dans chaque action** (`peutModerer`…) : masquer un bouton ne suffit pas. Côté pages, `exigerModerateur` et `exigerSuperAdmin`.
 - Toute entrée utilisateur passe par zod. Toute couleur saisie passe le contrôle de contraste.
+- **Mobile first** : styles de base pour le mobile (375 px), puis `sm:`, `md:` et `lg:` pour élargir. La navigation (`components/navigation.tsx`) passe d'un menu déroulant `<details>` (`menu-mobile.tsx`) aux liens en ligne à partir de `lg`. Aucun débordement horizontal toléré.
 - Les fichiers serveur importent `server-only`. La carte Leaflet est chargée côté client uniquement et démontée quand la route est cachée (`<Activity>`).
 - **Git** : branche par fonctionnalité depuis `develop`, puis PR vers `develop`. Commits en français.
 - **Uniquement des données fictives** (seed, tests, comptes de démo, captures). Aucune donnée personnelle réelle.
