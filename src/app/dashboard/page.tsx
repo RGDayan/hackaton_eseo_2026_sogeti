@@ -5,6 +5,7 @@ import { BadgeCategorie } from "@/components/idee-card";
 import { Anneau, BarresHorizontales } from "@/components/graphiques";
 import { getEspacePerso, getTableauDeBord, type IdeeResume } from "@/lib/dashboard";
 import { getUtilisateur } from "@/lib/session";
+import { getVilleCourante } from "@/lib/ville";
 
 export const metadata: Metadata = {
   title: "Tableau de bord | Place Commune",
@@ -21,6 +22,9 @@ export default function PageTableauDeBord() {
   return (
     <>
       <section className="py-6 sm:py-10 lg:py-14">
+        <Suspense fallback={<p className="h-5" />}>
+          <NomVilleCourante />
+        </Suspense>
         <h1 className="font-titre text-3xl leading-tight font-semibold text-foret sm:text-5xl lg:text-6xl">Le quartier en chiffres.</h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed sm:mt-4 sm:text-lg text-gris">
           Ce qui se propose, ce qui se vote et ce qui réunit le plus d&apos;habitants.
@@ -41,8 +45,14 @@ export default function PageTableauDeBord() {
   );
 }
 
+async function NomVilleCourante() {
+  const ville = await getVilleCourante();
+  return <p className="mb-2 text-sm font-semibold tracking-wide text-foret uppercase">{ville.nom}</p>;
+}
+
 async function Synthese() {
-  const d = await getTableauDeBord();
+  const ville = await getVilleCourante();
+  const d = await getTableauDeBord(ville.id);
 
   const totalVotes = d.votesPour + d.votesContre;
   const pctFavorables = totalVotes === 0 ? 0 : Math.round((d.votesPour / totalVotes) * 100);
@@ -234,7 +244,10 @@ function ListeIdees({ idees }: { idees: IdeeResume[] }) {
         <li key={idee.id} className="rounded-2xl border border-trait bg-carte p-4">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gris">
             <BadgeCategorie nom={idee.categorie.nom} couleur={idee.categorie.couleur} />
-            <span>{idee.localisation.nom}</span>
+            {/* Espace perso : idées de toutes les villes. */}
+            <span>
+              {idee.localisation.nom}, {idee.localisation.ville.nom}
+            </span>
           </div>
           <Link
             href={`/idees/${idee.id}`}

@@ -1,19 +1,10 @@
 import { z } from "zod";
+import { CONTRASTE_MIN, FOND_CARTE, HEX, contrasteSuffisant, ratioContraste } from "@/lib/contraste";
 
 export const MAX_TAGS = 5;
 export const MAX_FICHIERS = 3;
 export const TAILLE_MAX_FICHIER = 5 * 1024 * 1024;
 export const EXTENSIONS_ACCEPTEES = ".pdf,.png,.jpg,.jpeg,.webp,.docx";
-
-export const schemaPseudo = z
-  .string({ error: "Choisissez un pseudo." })
-  .trim()
-  .min(3, "Votre pseudo doit faire au moins 3 caractères.")
-  .max(24, "Votre pseudo doit faire au plus 24 caractères.")
-  .regex(
-    /^[\p{L}\p{N}][\p{L}\p{N} _.-]*$/u,
-    "Utilisez des lettres, des chiffres, des espaces, ou les signes _ . -",
-  );
 
 const schemaTag = z
   .string()
@@ -51,8 +42,6 @@ export const schemaSuggestion = z
     message: "La position sur la carte est incomplète.",
   });
 
-export type EtatConnexion = { erreur?: string };
-
 type ChampSuggestion = "titre" | "description" | "categorieId" | "localisationId" | "tags" | "fichiers" | "latitude";
 
 export type EtatSuggestion = {
@@ -68,3 +57,69 @@ export function cheminSur(valeur: unknown): string {
   if (!valeur.startsWith("/") || valeur.startsWith("//") || valeur.includes("\\")) return "/";
   return valeur;
 }
+
+export const schemaMotif = z
+  .string({ error: "Indiquez le motif du masquage." })
+  .trim()
+  .min(3, "Le motif doit faire au moins 3 caractères.")
+  .max(300, "Le motif doit faire au plus 300 caractères.");
+
+// ——— Administration ———
+
+/** « Fontaine d'Ouche » → « fontaine-d-ouche » */
+export function slugifier(texte: string) {
+  return texte
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+const schemaSlug = z
+  .string()
+  .regex(/^[a-z0-9-]{2,60}$/, "Identifiant d'URL : 2 à 60 caractères, lettres minuscules, chiffres et tirets.");
+
+const nombre = (min: number, max: number, message: string) =>
+  z.preprocess((v) => (v === "" || v === null ? undefined : Number(v)), z.number(message).min(min, message).max(max, message));
+
+const couleur = z.string().regex(HEX, "Couleur attendue au format #rrggbb.");
+
+/** Couleur de la charte : texte sur le fond papier et fond des boutons à texte blanc (≥ 4,5:1). */
+const couleurLisible = couleur.refine(contrasteSuffisant, {
+  message: `Contraste insuffisant : il faut au moins ${CONTRASTE_MIN}:1 sur le fond de page et avec un texte blanc.`,
+});
+
+export const schemaVille = z.object({
+  nom: z.string().trim().min(2, "Le nom doit faire au moins 2 caractères.").max(80, "80 caractères maximum."),
+  slug: schemaSlug,
+  latitude: nombre(-90, 90, "Latitude entre -90 et 90."),
+  longitude: nombre(-180, 180, "Longitude entre -180 et 180."),
+  zoom: nombre(3, 18, "Zoom entre 3 et 18.").pipe(z.number().int("Zoom entier.")),
+  couleurPrincipale: couleurLisible,
+  couleurPrincipaleFoncee: couleurLisible,
+  couleurAccent: couleur,
+  logoUrl: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.url({ protocol: /^https?$/, error: "Adresse du logo invalide (http ou https)." }).max(500).optional(),
+  ),
+});
+
+export const schemaQuartier = z.object({
+  nom: z.string().trim().min(2, "Le nom doit faire au moins 2 caractères.").max(80, "80 caractères maximum."),
+  slug: schemaSlug,
+  latitude: nombre(-90, 90, "Latitude entre -90 et 90."),
+  longitude: nombre(-180, 180, "Longitude entre -180 et 180."),
+});
+
+export const schemaCategorie = z.object({
+  nom: z.string().trim().min(2, "Le nom doit faire au moins 2 caractères.").max(60, "60 caractères maximum."),
+  slug: schemaSlug,
+  // Couleur du texte des badges, sur le fond des cartes.
+  couleur: couleur.refine((c) => ratioContraste(c, FOND_CARTE) >= CONTRASTE_MIN, {
+    message: `Contraste insuffisant : il faut au moins ${CONTRASTE_MIN}:1 sur le fond des cartes.`,
+  }),
+});
+
+export type EtatAdmin = { erreur?: string; ok?: string };

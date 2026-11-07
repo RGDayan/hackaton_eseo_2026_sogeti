@@ -18,34 +18,48 @@ const selectResume = {
   votesContre: true,
   score: true,
   categorie: { select: { nom: true, couleur: true } },
-  localisation: { select: { nom: true } },
+  localisation: { select: { nom: true, ville: { select: { nom: true } } } },
 } satisfies Prisma.SuggestionSelect;
 
 export type IdeeResume = Prisma.SuggestionGetPayload<{ select: typeof selectResume }>;
 
-/** Chiffres de la plateforme : visibles par tout le monde, sans connexion. */
-export async function getTableauDeBord() {
+/** Chiffres de la ville courante : visibles par tout le monde, sans connexion. Sans les idées masquées. */
+export async function getTableauDeBord(villeId: number) {
   await connection();
+  const dansLaVille = { masquee: false, localisation: { villeId } } satisfies Prisma.SuggestionWhereInput;
 
   const [idees, nouvellesCetteSemaine, voisins, votesParValeur, groupesCategorie, groupesQuartier, categories, quartiers, topIdees] =
     await Promise.all([
-      prisma.suggestion.count(),
-      prisma.suggestion.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
-      prisma.user.count(),
-      prisma.vote.groupBy({ by: ["valeur"], _count: { _all: true } }),
+      prisma.suggestion.count({ where: dansLaVille }),
+      prisma.suggestion.count({
+        where: { ...dansLaVille, createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      }),
+      // Voisins : habitants qui ont proposé ou voté dans la ville.
+      prisma.user.count({
+        where: {
+          OR: [{ suggestions: { some: dansLaVille } }, { votes: { some: { suggestion: dansLaVille } } }],
+        },
+      }),
+      prisma.vote.groupBy({ by: ["valeur"], where: { suggestion: dansLaVille }, _count: { _all: true } }),
       prisma.suggestion.groupBy({
         by: ["categorieId"],
+        where: dansLaVille,
         _count: { _all: true },
         _sum: { votesPour: true, votesContre: true },
       }),
       prisma.suggestion.groupBy({
         by: ["localisationId"],
+        where: dansLaVille,
         _count: { _all: true },
         _sum: { votesPour: true, votesContre: true },
       }),
-      prisma.categorie.findMany({ select: { id: true, nom: true, slug: true, couleur: true } }),
-      prisma.localisation.findMany({ select: { id: true, nom: true, slug: true } }),
+      prisma.categorie.findMany({
+        where: { localisations: { some: { villeId } } },
+        select: { id: true, nom: true, slug: true, couleur: true },
+      }),
+      prisma.localisation.findMany({ where: { villeId }, select: { id: true, nom: true, slug: true } }),
       prisma.suggestion.findMany({
+        where: dansLaVille,
         orderBy: [{ score: "desc" }, { createdAt: "desc" }],
         take: 5,
         select: selectResume,
@@ -97,14 +111,15 @@ export async function getEspacePerso(userId: number) {
   await connection();
 
   const [favorites, miennes, votesDonnes] = await Promise.all([
+    // Toutes villes confondues, sans les idées masquées par la modération.
     prisma.vote.findMany({
-      where: { userId, valeur: 1 },
+      where: { userId, valeur: 1, suggestion: { masquee: false } },
       orderBy: { createdAt: "desc" },
       take: 60,
       select: { suggestion: { select: selectResume } },
     }),
     prisma.suggestion.findMany({
-      where: { auteurId: userId },
+      where: { auteurId: userId, masquee: false },
       orderBy: { createdAt: "desc" },
       take: 60,
       select: selectResume,

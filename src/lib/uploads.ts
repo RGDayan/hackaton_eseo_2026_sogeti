@@ -73,3 +73,8 @@ export async function supprimerFichiers(fichiers: FichierPrepare[]) {
 export function lireFichier(nomStockage: string) {
   return readFile(path.join(DOSSIER, path.basename(nomStockage)));
 }
+
+/** Efface les fichiers d'une idée supprimée (noms de stockage). Les fichiers déjà absents sont ignorés. */
+export async function supprimerFichiersParNom(nomsStockage: string[]) {
+  await Promise.allSettled(nomsStockage.map((nom) => unlink(path.join(DOSSIER, path.basename(nom)))));
+}
