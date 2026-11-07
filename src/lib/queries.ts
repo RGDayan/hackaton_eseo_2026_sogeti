@@ -56,7 +56,7 @@ const champsCarte = {
   categorie: { select: { nom: true, couleur: true } },
   localisation: { select: { nom: true } },
   tags: { select: { nom: true }, orderBy: { nom: "asc" } },
-  _count: { select: { piecesJointes: true } },
+  _count: { select: { piecesJointes: true, commentaires: true } },
 } satisfies Prisma.SuggestionSelect;
 
 export async function listerSuggestions(f: Filtres) {
@@ -175,3 +175,21 @@ export async function listerFavoris(userId: number) {
   });
   return lignes.map((l) => l.suggestion);
 }
+
+/** Commentaires d'une idée, du plus récent au plus ancien. */
+export async function listerCommentaires(suggestionId: number) {
+  await connection();
+  return prisma.commentaire.findMany({
+    where: { suggestionId },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: {
+      id: true,
+      contenu: true,
+      createdAt: true,
+      auteur: { select: { id: true, nickname: true } },
+    },
+  });
+}
+
+export type CommentaireListe = Awaited<ReturnType<typeof listerCommentaires>>[number];

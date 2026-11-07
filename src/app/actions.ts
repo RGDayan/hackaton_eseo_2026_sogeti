@@ -8,6 +8,7 @@ import { fermerSession, getUtilisateur, ouvrirSession } from "@/lib/session";
 import { enregistrerFichiers, preparerFichiers, supprimerFichiers } from "@/lib/uploads";
 import {
   cheminSur,
+  schemaCommentaire,
   schemaPseudo,
   schemaSuggestion,
   type EtatConnexion,
@@ -110,6 +111,50 @@ export async function definirFavori(suggestionId: number, actif: boolean): Promi
     if (e instanceof Prisma.PrismaClientKnownRequestError) return { statut: "erreur" };
     throw e;
   }
+
+  revalidatePath("/", "layout");
+  return { statut: "ok" };
+}
+
+export type ResultatCommentaire = {
+  statut: "ok" | "non-connecte" | "invalide" | "erreur";
+  message?: string;
+};
+
+export async function ajouterCommentaire(suggestionId: number, contenu: string): Promise<ResultatCommentaire> {
+  if (!Number.isInteger(suggestionId)) return { statut: "erreur" };
+
+  const user = await getUtilisateur();
+  if (!user) return { statut: "non-connecte" };
+
+  const resultat = schemaCommentaire.safeParse(contenu);
+  if (!resultat.success) return { statut: "invalide", message: resultat.error.issues[0].message };
+
+  try {
+    await prisma.commentaire.create({
+      data: { contenu: resultat.data, auteurId: user.id, suggestionId },
+    });
+  } catch (e) {
+    // Idée supprimée entre-temps (clé étrangère) : rien n'est enregistré.
+    if (e instanceof Prisma.PrismaClientKnownRequestError) return { statut: "erreur" };
+    throw e;
+  }
+
+  revalidatePath("/", "layout");
+  return { statut: "ok" };
+}
+
+/** Seul l'auteur peut supprimer son commentaire : la condition est dans la requête elle-même. */
+export async function supprimerCommentaire(commentaireId: number): Promise<ResultatCommentaire> {
+  if (!Number.isInteger(commentaireId)) return { statut: "erreur" };
+
+  const user = await getUtilisateur();
+  if (!user) return { statut: "non-connecte" };
+
+  const { count } = await prisma.commentaire.deleteMany({
+    where: { id: commentaireId, auteurId: user.id },
+  });
+  if (count === 0) return { statut: "erreur" };
 
   revalidatePath("/", "layout");
   return { statut: "ok" };

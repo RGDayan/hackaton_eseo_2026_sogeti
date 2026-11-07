@@ -18,6 +18,7 @@ model User {
   suggestions Suggestion[]
   votes       Vote[]
   favoris     Favori[]
+  commentaires Commentaire[]
 
   @@map("users")
 }
@@ -81,6 +82,7 @@ model Suggestion {
   piecesJointes PieceJointe[]
   votes        Vote[]
   favoris      Favori[]
+  commentaires Commentaire[]
 
   @@index([createdAt])
   @@index([score])
@@ -132,4 +134,20 @@ model Favori {
   @@id([userId, suggestionId])
   @@index([suggestionId])
   @@map("favoris")
+}
+
+/// Un commentaire laissé par un habitant sur une idée.
+model Commentaire {
+  id           Int      @id @default(autoincrement())
+  contenu      String   @db.VarChar(1000)
+  createdAt    DateTime @default(now()) @map("created_at")
+  auteurId     Int      @map("auteur_id")
+  suggestionId Int      @map("suggestion_id")
+
+  auteur     User       @relation(fields: [auteurId], references: [id], onDelete: Cascade)
+  suggestion Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+
+  @@index([suggestionId, createdAt])
+  @@index([auteurId])
+  @@map("commentaires")
 }
