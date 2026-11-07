@@ -1,43 +1,51 @@
 import { prisma } from "@/prisma/lib/dbcontext";
 
-async function listInvoices() {
-  const data = await prisma.invoices.findMany({
+async function listSuggestions() {
+  // EXEMPLE DE FILTRE + SELECT AVEC JOINTURES
+  const data = await prisma.suggestion.findMany({
     where: {
-      amount: 666
+      tags: { some: { name: "Écologie" } }
     },
     select: {
-      amount: true,
-      Customer: {
+      titre: true,
+      User: {
         select: {
-          name: true
+          username: true
         }
+      },
+      tags: {
+        select: { name: true }
+      },
+      _count: {
+        select: { votes: true }
       }
     }
   })
 
-  // EXEMPLE D'UTILISATEUR D'UNE JOINTURE
-  // const invoices = await prisma.invoices.findMany({
-  //  include: {
-  //    Customer: true  
-  //  }
+  // EXEMPLE D'UTILISATION D'UNE JOINTURE
+  // const suggestions = await prisma.suggestion.findMany({
+  //   include: {
+  //     User: true,
+  //     categories: true
+  //   }
   // })
-  // invoices.forEach( invoice => {
-  //   console.log(invoice.Customer.name);
+  // suggestions.forEach(suggestion => {
+  //   console.log(suggestion.User.username, suggestion.categories.length);
   // })
 
   // EXEMPLE DE FORMATAGE POUR UN RESULTAT SPECIFIQUE DTO
-  // const data = await prisma.invoices.findMany({
-  //   where: {
-  //     amount: 666
-  //   },
+  // const data = await prisma.suggestion.findMany({
   //   include: {
-  //     Customer: true
+  //     User: true,
+  //     votes: true
   //   }
   // });
-
-  // const result = data.map(invoice => ({
-  //   amount: invoice.amount,
-  //   name: invoice.Customer.name,
+  //
+  // const result = data.map(suggestion => ({
+  //   titre: suggestion.titre,
+  //   auteur: suggestion.User.username,
+  //   votesPour: suggestion.votes.filter(v => v.statut).length,
+  //   votesContre: suggestion.votes.filter(v => !v.statut).length,
   // }))
 
   return data;
@@ -45,7 +53,7 @@ async function listInvoices() {
 
 export async function GET() {
   try {
-    return Response.json(await listInvoices());
+    return Response.json(await listSuggestions());
   } catch (error) {
     return Response.json({ error }, { status: 500 });
   }

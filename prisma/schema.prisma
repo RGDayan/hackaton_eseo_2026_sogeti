@@ -12,37 +12,62 @@ datasource db {
   provider = "postgresql"
 }
 
-// #TODO Changer le schéma model selon le schéma cible
-model Customer {
-  id        String @id @default(uuid())
-  name      String
-  email     String @unique
-  imageUrl  String
-  Invoices Invoices[]
-}
-
-enum InvoiceStatus {
-  pending
-  paid
-}
-
-model Invoices {
-  id          String @id @default(uuid())
-  customerId  String
-  amount       Int
-  status      InvoiceStatus
-  date        String
-  Customer    Customer @relation(fields: [customerId], references: [id])
-}
-
-model Revenue {
-  month       String @id
-  revenue     Int
-}
-
 model User {
-  id          String @id @default(uuid())
+  id          String       @id @default(uuid())
+  username    String       @unique
+  suggestions Suggestion[]
+  votes       Vote[]
+}
+
+model Vote {
+  id           String     @id @default(uuid())
+  statut       Boolean
+  userId       String
+  suggestionId String
+  User         User       @relation(fields: [userId], references: [id])
+  Suggestion   Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, suggestionId])
+}
+
+model Suggestion {
+  id            String         @id @default(uuid())
+  titre         String
+  description   String
+  userId        String
+  User          User           @relation(fields: [userId], references: [id])
+  votes         Vote[]
+  pieceJointes  PieceJointe[]
+  tags          Tag[]          @relation("SuggestionTags")
+  localisations Localisation[] @relation("SuggestionLocalisations")
+  categories    Categorie[]    @relation("SuggestionCategories")
+}
+
+model PieceJointe {
+  id           String     @id @default(uuid())
+  url          String
+  suggestionId String
+  Suggestion   Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id          String       @id @default(uuid())
   name        String
-  email       String @unique
-  password    String
+  suggestions Suggestion[] @relation("SuggestionTags")
+}
+
+model Localisation {
+  id          String       @id @default(uuid())
+  nom         String
+  latitude    Float
+  longitude   Float
+  suggestions Suggestion[] @relation("SuggestionLocalisations")
+  categories  Categorie[]  @relation("CategorieLocalisations")
+}
+
+model Categorie {
+  id            String         @id @default(uuid())
+  name          String
+  suggestions   Suggestion[]   @relation("SuggestionCategories")
+  localisations Localisation[] @relation("CategorieLocalisations")
 }
