@@ -58,7 +58,12 @@ async function Idee({ params }: { params: PageProps<"/idees/[id]">["params"] }) 
           {idee.localisation.nom}, {idee.localisation.ville.nom}
         </span>
         <span className="ml-auto">
-          <Favori suggestionId={idee.id} estFavori={mesFavoris.has(idee.id)} connecte={Boolean(utilisateur)} />
+          <Favori
+            suggestionId={idee.id}
+            estFavori={mesFavoris.has(idee.id)}
+            nombre={idee._count.favoris}
+            connecte={Boolean(utilisateur)}
+          />
         </span>
       </div>
       <h1 className="mt-3 font-titre text-3xl leading-tight font-semibold text-foret sm:text-4xl">{idee.titre}</h1>
