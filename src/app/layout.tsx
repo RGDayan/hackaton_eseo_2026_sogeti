@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               Place Commune
             </Link>
             <nav className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
-              <Link href="/dashboard" className="text-sm font-semibold hover:text-foret hover:underline">
+              <Link href="/dashboard" className="text-sm font-semibold text-foret hover:underline">
                 <span className="sm:hidden">Chiffres</span>
                 <span className="hidden sm:inline">Tableau de bord</span>
               </Link>
