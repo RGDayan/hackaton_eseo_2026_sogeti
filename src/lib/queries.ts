@@ -52,12 +52,20 @@ const champsCarte = {
   titre: true,
   description: true,
   votesPour: true,
-  votesContre: true,
   createdAt: true,
   auteur: { select: { nickname: true } },
-  categorie: { select: { nom: true, couleur: true } },
-  localisation: { select: { nom: true, ville: { select: { nom: true, slug: true } } } },
+  categorie: { select: { nom: true, slug: true, couleur: true } },
+  localisation: {
+    select: { nom: true, slug: true, ville: { select: { nom: true, slug: true, couleurPrincipale: true } } },
+  },
   tags: { select: { nom: true }, orderBy: { nom: "asc" } },
+  // Première photo jointe, affichée en tête de carte.
+  piecesJointes: {
+    where: { typeMime: { startsWith: "image/" } },
+    orderBy: { id: "asc" },
+    take: 1,
+    select: { id: true },
+  },
   _count: { select: { piecesJointes: true, commentaires: true, favoris: true } },
 } satisfies Prisma.SuggestionSelect;
 
@@ -65,7 +73,7 @@ export async function listerSuggestions(f: Filtres, villeId: number) {
   await connection();
   const where = clauseWhere(f, villeId);
   const orderBy: Prisma.SuggestionOrderByWithRelationInput[] =
-    f.tri === "mieux-notees" ? [{ score: "desc" }, { createdAt: "desc" }] : [{ createdAt: "desc" }];
+    f.tri === "mieux-notees" ? [{ votesPour: "desc" }, { createdAt: "desc" }] : [{ createdAt: "desc" }];
 
   const [suggestions, total] = await Promise.all([
     prisma.suggestion.findMany({
@@ -87,7 +95,7 @@ export async function listerEpingles(f: Filtres, villeId: number) {
   await connection();
   const lignes = await prisma.suggestion.findMany({
     where: { ...clauseWhere(f, villeId), latitude: { not: null }, longitude: { not: null } },
-    orderBy: { score: "desc" },
+    orderBy: { votesPour: "desc" },
     take: MAX_EPINGLES,
     select: {
       id: true,
@@ -95,7 +103,6 @@ export async function listerEpingles(f: Filtres, villeId: number) {
       latitude: true,
       longitude: true,
       votesPour: true,
-      votesContre: true,
       categorie: { select: { nom: true, couleur: true } },
     },
   });
@@ -105,10 +112,46 @@ export async function listerEpingles(f: Filtres, villeId: number) {
     latitude: l.latitude as number,
     longitude: l.longitude as number,
     votesPour: l.votesPour,
-    votesContre: l.votesContre,
     categorie: l.categorie.nom,
     couleur: l.categorie.couleur,
   }));
+}
+
+/** Les idées les plus soutenues de la ville, pour le carrousel « En ce moment ». */
+export async function listerTendances(villeId: number, nombre = 4) {
+  await connection();
+  return prisma.suggestion.findMany({
+    where: { masquee: false, localisation: { villeId } },
+    orderBy: [{ votesPour: "desc" }, { createdAt: "desc" }],
+    take: nombre,
+    select: champsCarte,
+  });
+}
+
+/** Idées de la même ville, de la même catégorie ou du même quartier en priorité. */
+export async function listerProches(
+  idee: { id: number; categorieSlug: string; quartierSlug: string; villeSlug: string },
+  nombre = 3,
+) {
+  await connection();
+  const base = { masquee: false, id: { not: idee.id }, localisation: { ville: { slug: idee.villeSlug } } };
+  const proches = await prisma.suggestion.findMany({
+    where: {
+      ...base,
+      OR: [{ categorie: { slug: idee.categorieSlug } }, { localisation: { slug: idee.quartierSlug } }],
+    },
+    orderBy: { votesPour: "desc" },
+    take: nombre,
+    select: champsCarte,
+  });
+  if (proches.length >= nombre) return proches;
+  const autres = await prisma.suggestion.findMany({
+    where: { ...base, id: { notIn: [idee.id, ...proches.map((p) => p.id)] } },
+    orderBy: { votesPour: "desc" },
+    take: nombre - proches.length,
+    select: champsCarte,
+  });
+  return [...proches, ...autres];
 }
 
 export async function getSuggestion(id: number) {
@@ -121,6 +164,7 @@ export async function getSuggestion(id: number) {
       longitude: true,
       masquee: true,
       motifMasquage: true,
+      masqueeLe: true,
       piecesJointes: {
         select: { id: true, nomOriginal: true, typeMime: true, taille: true },
         orderBy: { id: "asc" },
@@ -180,11 +224,11 @@ export async function getStatistiques(villeId: number) {
   return { idees, votes, voisins };
 }
 
-/** Votes de l'utilisateur sur les idées données : { idSuggestion: 1 | -1 }. */
+/** Soutiens de l'utilisateur sur les idées données : { idSuggestion: 1 }. */
 export async function getMesVotes(userId: number | undefined, ids: number[]) {
   if (!userId || ids.length === 0) return {} as Record<number, number>;
   const votes = await prisma.vote.findMany({
-    where: { userId, suggestionId: { in: ids } },
+    where: { userId, valeur: 1, suggestionId: { in: ids } },
     select: { suggestionId: true, valeur: true },
   });
   return Object.fromEntries(votes.map((v) => [v.suggestionId, v.valeur])) as Record<number, number>;
@@ -229,3 +273,33 @@ export async function listerCommentaires(suggestionId: number) {
 }
 
 export type CommentaireListe = Awaited<ReturnType<typeof listerCommentaires>>[number];
+
+/** Activité de l'habitant connecté, toutes villes confondues : ses idées, ses votes, ses favoris. */
+export async function getActivite(userId: number) {
+  await connection();
+  const visibles = { masquee: false } satisfies Prisma.SuggestionWhereInput;
+  const [idees, votes, favoris, commentaires, inscription] = await Promise.all([
+    prisma.suggestion.findMany({
+      where: { auteurId: userId, ...visibles },
+      orderBy: { createdAt: "desc" },
+      take: 60,
+      select: champsCarte,
+    }),
+    prisma.vote.findMany({
+      where: { userId, valeur: 1, suggestion: visibles },
+      orderBy: { createdAt: "desc" },
+      take: 60,
+      select: { valeur: true, suggestion: { select: champsCarte } },
+    }),
+    listerFavoris(userId),
+    prisma.commentaire.count({ where: { auteurId: userId } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { createdAt: true } }),
+  ]);
+  return {
+    idees,
+    votes: votes.map((v) => ({ ...v.suggestion, monVote: v.valeur })),
+    favoris,
+    commentaires,
+    inscritLe: inscription?.createdAt ?? null,
+  };
+}

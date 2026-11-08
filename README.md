@@ -1,4 +1,4 @@
-# Place Commune
+# Quartea
 
 Plateforme de démocratie participative. Les habitants proposent des idées pour leur quartier, les situent sur une carte et votent pour ou contre celles de leurs voisins.
 

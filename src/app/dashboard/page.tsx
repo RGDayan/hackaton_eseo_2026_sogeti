@@ -2,14 +2,12 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BadgeCategorie } from "@/components/idee-card";
-import { Anneau, BarresHorizontales } from "@/components/graphiques";
-import { getEspacePerso, getTableauDeBord, type IdeeResume } from "@/lib/dashboard";
-import { getUtilisateur } from "@/lib/session";
-import { redirect } from "next/navigation";
+import { BarresHorizontales } from "@/components/graphiques";
+import { getTableauDeBord } from "@/lib/dashboard";
 import { getVilleCourante } from "@/lib/ville";
 
 export const metadata: Metadata = {
-  title: "Tableau de bord | Place Commune",
+  title: "Tableau de bord | Quartea",
   description: "Les idées, les votes et les catégories qui comptent dans votre quartier, en un coup d'œil.",
 };
 
@@ -17,19 +15,15 @@ const nombre = new Intl.NumberFormat("fr-FR");
 const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 
 const pluriel = (n: number, mot: string) => `${nombre.format(n)} ${mot}${n > 1 ? "s" : ""}`;
-const signe = (n: number) => (n > 0 ? `+${n}` : String(n));
 
 export default function PageTableauDeBord() {
   return (
     <>
       <section className="py-6 sm:py-10 lg:py-14">
-        <Link href="/" className="text-sm text-gris hover:text-encre hover:underline">
-          ← Toutes les idées
-        </Link>
         <Suspense fallback={<p className="h-5" />}>
           <NomVilleCourante />
         </Suspense>
-        <h1 className="font-titre text-3xl leading-tight font-semibold text-foret sm:text-5xl lg:text-6xl">Le quartier en chiffres.</h1>
+        <h1 className="font-titre text-3xl leading-tight font-semibold text-foret sm:text-5xl lg:text-6xl">La ville en chiffres.</h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed sm:mt-4 sm:text-lg text-gris">
           Ce qui se propose, ce qui se vote et ce qui réunit le plus d&apos;habitants.
         </p>
@@ -37,10 +31,6 @@ export default function PageTableauDeBord() {
 
       <Suspense fallback={<SqueletteSynthese />}>
         <Synthese />
-      </Suspense>
-
-      <Suspense fallback={<div className="mt-10 h-48 animate-pulse rounded-2xl bg-trait/50" />}>
-        <EspacePerso />
       </Suspense>
     </>
   );
@@ -55,8 +45,7 @@ async function Synthese() {
   const ville = await getVilleCourante();
   const d = await getTableauDeBord(ville.id);
 
-  const totalVotes = d.votesPour + d.votesContre;
-  const pctFavorables = totalVotes === 0 ? 0 : Math.round((d.votesPour / totalVotes) * 100);
+  const totalSoutiens = d.votesPour;
 
   const tuiles = [
     {
@@ -65,9 +54,9 @@ async function Synthese() {
       detail: `${pluriel(d.nouvellesCetteSemaine, "nouvelle")} cette semaine`,
     },
     {
-      libelle: "Votes exprimés",
-      valeur: nombre.format(totalVotes),
-      detail: `${nombre.format(d.votesPour)} pour, ${nombre.format(d.votesContre)} contre`,
+      libelle: "Soutiens",
+      valeur: nombre.format(totalSoutiens),
+      detail: "apportés aux idées des voisins",
     },
     {
       libelle: "Voisins inscrits",
@@ -75,9 +64,9 @@ async function Synthese() {
       detail: "ont rejoint la plateforme",
     },
     {
-      libelle: "Votes par idée",
-      valeur: decimal.format(d.idees === 0 ? 0 : totalVotes / d.idees),
-      detail: `${pctFavorables} % d'avis favorables`,
+      libelle: "Soutiens par idée",
+      valeur: decimal.format(d.idees === 0 ? 0 : totalSoutiens / d.idees),
+      detail: "en moyenne",
     },
   ];
 
@@ -117,10 +106,7 @@ async function Synthese() {
                     >
                       {idee.titre}
                     </Link>
-                    <BarreVotes pour={idee.votesPour} contre={idee.votesContre} />
-                    <p className="mt-1.5 text-xs text-gris">
-                      {idee.votesPour} pour, {idee.votesContre} contre, score {signe(idee.score)}
-                    </p>
+                    <p className="mt-1.5 text-xs text-gris">{pluriel(idee.votesPour, "soutien")}</p>
                   </div>
                 </li>
               ))}
@@ -137,7 +123,7 @@ async function Synthese() {
                 libelle: c.nom,
                 valeur: c.idees,
                 couleur: c.couleur,
-                detail: `${pluriel(c.idees, "idée")}, ${pluriel(c.votes, "vote")}`,
+                detail: `${pluriel(c.idees, "idée")}, ${pluriel(c.votes, "soutien")}`,
                 href: `/?categorie=${encodeURIComponent(c.slug)}`,
               }))}
             />
@@ -145,21 +131,7 @@ async function Synthese() {
         </Bloc>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-[2fr_3fr]">
-        <Bloc titre="La tendance du quartier">
-          <Anneau pour={d.votesPour} contre={d.votesContre} />
-          <ul className="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="size-3 rounded-full bg-foret" aria-hidden />
-              Pour : {nombre.format(d.votesPour)}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="size-3 rounded-full bg-tomate" aria-hidden />
-              Contre : {nombre.format(d.votesContre)}
-            </li>
-          </ul>
-        </Bloc>
-
+      <div className="mt-4 sm:mt-6">
         <Bloc titre="Les idées par quartier">
           {d.parQuartier.every((q) => q.idees === 0) ? (
             <Vide />
@@ -169,7 +141,7 @@ async function Synthese() {
                 libelle: q.nom,
                 valeur: q.idees,
                 couleur: "#1f4d3a",
-                detail: `${pluriel(q.idees, "idée")}, ${pluriel(q.votes, "vote")}`,
+                detail: `${pluriel(q.idees, "idée")}, ${pluriel(q.votes, "soutien")}`,
                 href: `/?quartier=${encodeURIComponent(q.slug)}`,
               }))}
             />
@@ -177,79 +149,6 @@ async function Synthese() {
         </Bloc>
       </div>
     </>
-  );
-}
-
-async function EspacePerso() {
-  const utilisateur = await getUtilisateur();
-  if (!utilisateur) redirect("/connexion?next=/dashboard");
-
-  const perso = await getEspacePerso(utilisateur.id);
-
-  return (
-    <section id="mes-propositions" className="mt-8 scroll-mt-24 sm:mt-10">
-      <h2 className="font-titre text-2xl font-semibold sm:text-3xl">Vos propositions</h2>
-
-      {perso.miennes.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-trait p-6 text-center sm:p-10">
-          <p className="font-titre text-xl font-semibold">Vous n&apos;avez pas encore proposé d&apos;idée.</p>
-          <p className="mt-2 text-sm text-gris">Une envie pour votre quartier ? Lancez la première.</p>
-          <Link href="/idees/nouvelle" className="bouton-plein mt-4 w-full sm:w-auto">
-            Proposer une idée
-          </Link>
-        </div>
-      ) : (
-        <>
-          <p className="mt-2 max-w-2xl text-gris">
-            {utilisateur.nickname}, vous avez proposé {pluriel(perso.miennes.length, "idée")}, qui{" "}
-            {perso.miennes.length > 1 ? "ont" : "a"} réuni {pluriel(perso.votesRecus, "vote")}.
-          </p>
-          <ListeIdees idees={perso.miennes} />
-        </>
-      )}
-    </section>
-  );
-}
-
-function ListeIdees({ idees }: { idees: IdeeResume[] }) {
-  return (
-    <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-      {idees.map((idee) => (
-        <li key={idee.id} className="rounded-2xl border border-trait bg-carte p-4">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gris">
-            <BadgeCategorie nom={idee.categorie.nom} couleur={idee.categorie.couleur} />
-            {/* Espace perso : idées de toutes les villes. */}
-            <span>
-              {idee.localisation.nom}, {idee.localisation.ville.nom}
-            </span>
-          </div>
-          <Link
-            href={`/idees/${idee.id}`}
-            className="mt-2 block font-titre text-base leading-snug sm:text-lg font-semibold hover:text-foret hover:underline"
-          >
-            {idee.titre}
-          </Link>
-          <BarreVotes pour={idee.votesPour} contre={idee.votesContre} />
-          <p className="mt-1.5 text-xs text-gris">
-            {idee.votesPour} pour, {idee.votesContre} contre
-          </p>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function BarreVotes({ pour, contre }: { pour: number; contre: number }) {
-  const total = pour + contre;
-  return (
-    <div className="mt-2.5 flex h-1.5 overflow-hidden rounded-full bg-trait/60" aria-hidden>
-      {total > 0 && (
-        <>
-          <div className="bg-foret" style={{ width: `${(pour / total) * 100}%` }} />
-          <div className="bg-tomate" style={{ width: `${(contre / total) * 100}%` }} />
-        </>
-      )}
-    </div>
   );
 }
 

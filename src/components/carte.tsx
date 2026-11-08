@@ -13,7 +13,6 @@ export type Epingle = {
   latitude: number;
   longitude: number;
   votesPour: number;
-  votesContre: number;
   categorie: string;
   couleur: string;
 };
@@ -81,7 +80,7 @@ export default function CarteIdees({ epingles, centre, zoom = 13 }: PropsIdees) 
                 {e.titre}
               </Link>
               <p className="!m-0 mt-1 text-xs">
-                {e.votesPour} pour · {e.votesContre} contre
+                {e.votesPour} soutien{e.votesPour > 1 ? "s" : ""}
               </p>
             </Popup>
           </Marker>

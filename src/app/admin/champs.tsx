@@ -65,7 +65,7 @@ export function ChampsVille({ prefixe, ville }: { prefixe: string; ville?: Ville
       <Champ id={p("lat")} name="latitude" libelle="Latitude" type="number" step="any" defaultValue={ville?.latitude} required />
       <Champ id={p("lng")} name="longitude" libelle="Longitude" type="number" step="any" defaultValue={ville?.longitude} required />
       <Champ id={p("zoom")} name="zoom" libelle="Zoom de la carte" type="number" min={3} max={18} defaultValue={ville?.zoom ?? 12} required aide="La carte s'ouvre sur la latitude et la longitude ci-dessus. Zoom de 3 (pays) à 18 (rue) ; 12 convient à une métropole." large />
-      <Champ id={p("logo")} name="logoUrl" libelle="Adresse du logo (facultatif)" type="url" defaultValue={ville?.logoUrl ?? ""} maxLength={500} large />
+      <Champ id={p("logo")} name="logoUrl" libelle="Adresse du logo (facultatif)" type="url" placeholder="https://exemple.fr/logo.svg" aide="Adresse complète de l'image, commençant par https://. Format carré conseillé (SVG ou PNG), affiché à la place de l'initiale de la ville." defaultValue={ville?.logoUrl ?? ""} maxLength={500} large />
       <fieldset className="col-span-2">
         <legend className="libelle">Charte graphique</legend>
         <div className="flex flex-wrap gap-6">

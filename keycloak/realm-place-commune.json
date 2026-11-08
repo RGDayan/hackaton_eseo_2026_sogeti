@@ -1,6 +1,6 @@
 {
   "realm": "place-commune",
-  "displayName": "Place Commune",
+  "displayName": "Quartea",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": true,
@@ -67,7 +67,7 @@
   "clients": [
     {
       "clientId": "place-commune-web",
-      "name": "Place Commune",
+      "name": "Quartea",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,

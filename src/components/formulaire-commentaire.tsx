@@ -27,8 +27,8 @@ export function FormulaireCommentaire({ suggestionId }: { suggestionId: number }
   }
 
   return (
-    <form onSubmit={envoyer}>
-      <label htmlFor="commentaire" className="sr-only">
+    <form onSubmit={envoyer} className="flex flex-col gap-2">
+      <label htmlFor="commentaire" className="text-sm font-bold">
         Votre commentaire
       </label>
       <textarea
@@ -37,22 +37,24 @@ export function FormulaireCommentaire({ suggestionId }: { suggestionId: number }
         onChange={(e) => setTexte(e.target.value)}
         maxLength={COMMENTAIRE_MAX}
         rows={3}
-        placeholder="Ajoutez un commentaire…"
-        className="w-full rounded-xl border border-trait bg-carte p-3 text-sm"
+        placeholder="Partagez votre avis, une précision, une expérience…"
+        aria-invalid={Boolean(erreur)}
+        aria-describedby={erreur ? "erreur-commentaire" : undefined}
+        className="champ resize-none rounded-2xl text-[15px] leading-[1.45]"
       />
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <span className="text-xs text-gris">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs text-gris tabular-nums">
           {texte.length} / {COMMENTAIRE_MAX}
         </span>
-        <button
-          type="submit"
-          disabled={enCours || texte.trim().length === 0}
-          className="bouton-plein disabled:opacity-50"
-        >
+        <button type="submit" disabled={enCours || texte.trim().length === 0} className="bouton-plein disabled:opacity-50">
           {enCours ? "Publication…" : "Publier"}
         </button>
       </div>
-      {erreur && <p className="erreur">{erreur}</p>}
+      {erreur && (
+        <p id="erreur-commentaire" role="alert" className="erreur">
+          {erreur}
+        </p>
+      )}
     </form>
   );
 }

@@ -15,8 +15,6 @@ const selectResume = {
   id: true,
   titre: true,
   votesPour: true,
-  votesContre: true,
-  score: true,
   categorie: { select: { nom: true, couleur: true } },
   localisation: { select: { nom: true, ville: { select: { nom: true } } } },
 } satisfies Prisma.SuggestionSelect;
@@ -45,13 +43,13 @@ export async function getTableauDeBord(villeId: number) {
         by: ["categorieId"],
         where: dansLaVille,
         _count: { _all: true },
-        _sum: { votesPour: true, votesContre: true },
+        _sum: { votesPour: true },
       }),
       prisma.suggestion.groupBy({
         by: ["localisationId"],
         where: dansLaVille,
         _count: { _all: true },
-        _sum: { votesPour: true, votesContre: true },
+        _sum: { votesPour: true },
       }),
       prisma.categorie.findMany({
         where: { localisations: { some: { villeId } } },
@@ -60,14 +58,13 @@ export async function getTableauDeBord(villeId: number) {
       prisma.localisation.findMany({ where: { villeId }, select: { id: true, nom: true, slug: true } }),
       prisma.suggestion.findMany({
         where: dansLaVille,
-        orderBy: [{ score: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ votesPour: "desc" }, { createdAt: "desc" }],
         take: 5,
         select: selectResume,
       })
     ]);
 
   const votesPour = votesParValeur.find((v) => v.valeur === 1)?._count._all ?? 0;
-  const votesContre = votesParValeur.find((v) => v.valeur === -1)?._count._all ?? 0;
 
   const parCategorie: LigneStat[] = categories
     .map((c) => {
@@ -77,7 +74,7 @@ export async function getTableauDeBord(villeId: number) {
         slug: c.slug,
         couleur: c.couleur,
         idees: g?._count._all ?? 0,
-        votes: (g?._sum.votesPour ?? 0) + (g?._sum.votesContre ?? 0),
+        votes: g?._sum.votesPour ?? 0,
       };
     })
     .sort((a, b) => b.idees - a.idees || b.votes - a.votes);
@@ -89,7 +86,7 @@ export async function getTableauDeBord(villeId: number) {
         nom: q.nom,
         slug: q.slug,
         idees: g?._count._all ?? 0,
-        votes: (g?._sum.votesPour ?? 0) + (g?._sum.votesContre ?? 0),
+        votes: g?._sum.votesPour ?? 0,
       };
     })
     .sort((a, b) => b.idees - a.idees || b.votes - a.votes);
@@ -99,26 +96,8 @@ export async function getTableauDeBord(villeId: number) {
     nouvellesCetteSemaine,
     voisins,
     votesPour,
-    votesContre,
     topIdees,
     parCategorie,
     parQuartier,
-  };
-}
-
-/** Les idées proposées par l'habitant connecté, et les votes qu'elles ont réunis. */
-export async function getEspacePerso(userId: number) {
-  await connection();
-
-  const miennes = await prisma.suggestion.findMany({
-    where: { auteurId: userId, masquee: false },
-    orderBy: { createdAt: "desc" },
-    take: 60,
-    select: selectResume,
-  });
-
-  return {
-    miennes,
-    votesRecus: miennes.reduce((total, i) => total + i.votesPour + i.votesContre, 0),
   };
 }
