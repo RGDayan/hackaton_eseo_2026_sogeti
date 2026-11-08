@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Favori } from "@/components/favori";
 import { Icone, pictoCategorie } from "@/components/icone";
 import { Vote } from "@/components/vote";
-import { monogramme, pourcentagePour } from "@/lib/format";
+import { monogramme } from "@/lib/format";
 import type { SuggestionListee } from "@/lib/queries";
 
 export { dateFr } from "@/lib/format";
@@ -77,10 +77,10 @@ export function IdeeCard({ idee, monVote, connecte, estFavori, afficherVille = f
             {idee.titre}
           </Link>
         </h3>
+        <p className="line-clamp-2 text-sm leading-relaxed break-words text-gris">{idee.description}</p>
         <Vote
           suggestionId={idee.id}
           pour={idee.votesPour}
-          contre={idee.votesContre}
           monVote={monVote}
           connecte={connecte}
         >
@@ -102,7 +102,6 @@ export function IdeeCard({ idee, monVote, connecte, estFavori, afficherVille = f
 /** Carte compacte du carrousel « En ce moment ». */
 export function IdeeCompacte({ idee, rang }: { idee: SuggestionListee; rang?: number }) {
   const photo = urlPhoto(idee);
-  const pct = pourcentagePour(idee.votesPour, idee.votesContre);
 
   return (
     <article className="relative w-[236px] shrink-0 overflow-hidden rounded-2xl border border-trait bg-carte shadow-[0_1px_2px_rgb(28_43_36/0.05),0_4px_14px_rgb(28_43_36/0.04)] lg:w-[260px]">
@@ -130,14 +129,10 @@ export function IdeeCompacte({ idee, rang }: { idee: SuggestionListee; rang?: nu
           </Link>
         </h3>
         <p className="text-[12.5px] text-gris">{idee.localisation.nom}</p>
-        <div className="flex items-center gap-2">
-          <div aria-hidden className="h-[5px] flex-1 overflow-hidden rounded-full bg-sable">
-            <div className="h-full bg-foret" style={{ width: `${pct}%` }} />
-          </div>
-          <span className="text-[12.5px] font-bold whitespace-nowrap">
-            {idee.votesPour} soutien{idee.votesPour > 1 ? "s" : ""}
-          </span>
-        </div>
+        <p className="flex items-center gap-1.5 text-[12.5px] font-bold text-foret-fonce">
+          <Icone nom="pour" taille={14} />
+          {idee.votesPour} soutien{idee.votesPour > 1 ? "s" : ""}
+        </p>
       </div>
     </article>
   );
@@ -145,7 +140,7 @@ export function IdeeCompacte({ idee, rang }: { idee: SuggestionListee; rang?: nu
 
 type PropsLigne = {
   idee: SuggestionListee;
-  /** Pastille « Pour » ou « Contre » : mon vote, dans Mon espace. */
+  /** Pastille « Soutenue » : l'habitant soutient l'idée, dans Mon espace. */
   monVote?: number;
   afficherVille?: boolean;
 };
@@ -153,7 +148,6 @@ type PropsLigne = {
 /** Carte en ligne : idées proches, Mon espace, aperçu sur la carte. */
 export function IdeeLigne({ idee, monVote, afficherVille = false }: PropsLigne) {
   const photo = urlPhoto(idee);
-  const pct = pourcentagePour(idee.votesPour, idee.votesContre);
 
   return (
     <div className="flex flex-col gap-[5px]">
@@ -191,20 +185,16 @@ export function IdeeLigne({ idee, monVote, afficherVille = false }: PropsLigne) 
           <span className="flex flex-wrap items-center gap-x-1.5 text-xs font-bold" style={{ color: idee.categorie.couleur }}>
             {idee.categorie.nom}
             <span className="font-medium text-gris">· {idee.localisation.nom}</span>
-            {monVote !== undefined && monVote !== 0 && (
-              <span
-                className={`ml-auto inline-flex items-center gap-1 rounded-full px-2 py-[3px] ${
-                  monVote === 1 ? "bg-foret/12 text-foret-fonce" : "bg-encre text-white"
-                }`}
-              >
-                <Icone nom={monVote === 1 ? "pour" : "contre"} taille={13} />
-                {monVote === 1 ? "Pour" : "Contre"}
+            {monVote === 1 && (
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-foret/12 px-2 py-[3px] text-foret-fonce">
+                <Icone nom="pour" taille={13} />
+                Soutenue
               </span>
             )}
           </span>
           <span className="line-clamp-2 font-titre text-[15px] leading-[1.25] font-semibold">{idee.titre}</span>
           <span className="text-[12.5px] text-gris">
-            <strong className="text-encre">{idee.votesPour}</strong> pour · {idee.votesContre} contre · {pct} %
+            <strong className="text-encre">{idee.votesPour}</strong> soutien{idee.votesPour > 1 ? "s" : ""}
           </span>
         </span>
         <span className="px-1.5 text-gris">

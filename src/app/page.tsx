@@ -208,7 +208,7 @@ async function Fil({ searchParams }: { searchParams: Params }) {
       <div className="mt-3.5 mb-3 flex items-center justify-between gap-2">
         <p role="status" className="text-sm text-gris">
           <strong className="text-encre">{pluriel(total, "idée")}</strong> ·{" "}
-          {filtres.tri === "mieux-notees" ? "les mieux notées" : "les plus récentes"}
+          {filtres.tri === "mieux-notees" ? "les plus soutenues" : "les plus récentes"}
         </p>
         {/* Bascule Liste / Carte : sur grand écran, les deux sont affichées côte à côte. */}
         <nav aria-label="Affichage" className="flex rounded-full bg-sable p-[3px] lg:hidden">

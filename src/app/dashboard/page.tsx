@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BadgeCategorie } from "@/components/idee-card";
-import { Anneau, BarresHorizontales } from "@/components/graphiques";
+import { BarresHorizontales } from "@/components/graphiques";
 import { getTableauDeBord } from "@/lib/dashboard";
 import { getVilleCourante } from "@/lib/ville";
 
@@ -15,7 +15,6 @@ const nombre = new Intl.NumberFormat("fr-FR");
 const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 
 const pluriel = (n: number, mot: string) => `${nombre.format(n)} ${mot}${n > 1 ? "s" : ""}`;
-const signe = (n: number) => (n > 0 ? `+${n}` : String(n));
 
 export default function PageTableauDeBord() {
   return (
@@ -46,8 +45,7 @@ async function Synthese() {
   const ville = await getVilleCourante();
   const d = await getTableauDeBord(ville.id);
 
-  const totalVotes = d.votesPour + d.votesContre;
-  const pctFavorables = totalVotes === 0 ? 0 : Math.round((d.votesPour / totalVotes) * 100);
+  const totalSoutiens = d.votesPour;
 
   const tuiles = [
     {
@@ -56,9 +54,9 @@ async function Synthese() {
       detail: `${pluriel(d.nouvellesCetteSemaine, "nouvelle")} cette semaine`,
     },
     {
-      libelle: "Votes exprimés",
-      valeur: nombre.format(totalVotes),
-      detail: `${nombre.format(d.votesPour)} pour, ${nombre.format(d.votesContre)} contre`,
+      libelle: "Soutiens",
+      valeur: nombre.format(totalSoutiens),
+      detail: "apportés aux idées des voisins",
     },
     {
       libelle: "Voisins inscrits",
@@ -66,9 +64,9 @@ async function Synthese() {
       detail: "ont rejoint la plateforme",
     },
     {
-      libelle: "Votes par idée",
-      valeur: decimal.format(d.idees === 0 ? 0 : totalVotes / d.idees),
-      detail: `${pctFavorables} % d'avis favorables`,
+      libelle: "Soutiens par idée",
+      valeur: decimal.format(d.idees === 0 ? 0 : totalSoutiens / d.idees),
+      detail: "en moyenne",
     },
   ];
 
@@ -108,10 +106,7 @@ async function Synthese() {
                     >
                       {idee.titre}
                     </Link>
-                    <BarreVotes pour={idee.votesPour} contre={idee.votesContre} />
-                    <p className="mt-1.5 text-xs text-gris">
-                      {idee.votesPour} pour, {idee.votesContre} contre, score {signe(idee.score)}
-                    </p>
+                    <p className="mt-1.5 text-xs text-gris">{pluriel(idee.votesPour, "soutien")}</p>
                   </div>
                 </li>
               ))}
@@ -128,7 +123,7 @@ async function Synthese() {
                 libelle: c.nom,
                 valeur: c.idees,
                 couleur: c.couleur,
-                detail: `${pluriel(c.idees, "idée")}, ${pluriel(c.votes, "vote")}`,
+                detail: `${pluriel(c.idees, "idée")}, ${pluriel(c.votes, "soutien")}`,
                 href: `/?categorie=${encodeURIComponent(c.slug)}`,
               }))}
             />
@@ -136,21 +131,7 @@ async function Synthese() {
         </Bloc>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-[2fr_3fr]">
-        <Bloc titre="La tendance du quartier">
-          <Anneau pour={d.votesPour} contre={d.votesContre} />
-          <ul className="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="size-3 rounded-full bg-foret" aria-hidden />
-              Pour : {nombre.format(d.votesPour)}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="size-3 rounded-full bg-tomate" aria-hidden />
-              Contre : {nombre.format(d.votesContre)}
-            </li>
-          </ul>
-        </Bloc>
-
+      <div className="mt-4 sm:mt-6">
         <Bloc titre="Les idées par quartier">
           {d.parQuartier.every((q) => q.idees === 0) ? (
             <Vide />
@@ -160,7 +141,7 @@ async function Synthese() {
                 libelle: q.nom,
                 valeur: q.idees,
                 couleur: "#1f4d3a",
-                detail: `${pluriel(q.idees, "idée")}, ${pluriel(q.votes, "vote")}`,
+                detail: `${pluriel(q.idees, "idée")}, ${pluriel(q.votes, "soutien")}`,
                 href: `/?quartier=${encodeURIComponent(q.slug)}`,
               }))}
             />
@@ -168,20 +149,6 @@ async function Synthese() {
         </Bloc>
       </div>
     </>
-  );
-}
-
-function BarreVotes({ pour, contre }: { pour: number; contre: number }) {
-  const total = pour + contre;
-  return (
-    <div className="mt-2.5 flex h-1.5 overflow-hidden rounded-full bg-trait/60" aria-hidden>
-      {total > 0 && (
-        <>
-          <div className="bg-foret" style={{ width: `${(pour / total) * 100}%` }} />
-          <div className="bg-tomate" style={{ width: `${(contre / total) * 100}%` }} />
-        </>
-      )}
-    </div>
   );
 }
 

@@ -64,9 +64,9 @@ export async function choisirVille(formData: FormData) {
 
 export type ResultatVote = { statut: "ok" | "non-connecte" | "erreur" };
 
-/** Voter deux fois de la même façon retire le vote ; voter à l'inverse le remplace. */
-export async function voter(suggestionId: number, valeur: 1 | -1): Promise<ResultatVote> {
-  if (!Number.isInteger(suggestionId) || (valeur !== 1 && valeur !== -1)) return { statut: "erreur" };
+/** Soutenir une idée ; soutenir une seconde fois retire le soutien. Il n'y a pas de vote « contre ». */
+export async function voter(suggestionId: number): Promise<ResultatVote> {
+  if (!Number.isInteger(suggestionId)) return { statut: "erreur" };
 
   const user = await getUtilisateur();
   if (!user) return { statut: "non-connecte" };
@@ -75,30 +75,20 @@ export async function voter(suggestionId: number, valeur: 1 | -1): Promise<Resul
   try {
     await prisma.$transaction(async (tx) => {
       const existant = await tx.vote.findUnique({ where: cle });
-      let pour = 0;
-      let contre = 0;
-
-      if (existant?.valeur === valeur) {
+      let delta = 1;
+      if (existant?.valeur === 1) {
         await tx.vote.delete({ where: cle });
-        if (valeur === 1) pour = -1;
-        else contre = -1;
+        delta = -1;
       } else if (existant) {
-        await tx.vote.update({ where: cle, data: { valeur } });
-        pour = valeur;
-        contre = -valeur;
+        // Ancien vote « contre » éventuel : il devient un soutien.
+        await tx.vote.update({ where: cle, data: { valeur: 1 } });
       } else {
-        await tx.vote.create({ data: { userId: user.id, suggestionId, valeur } });
-        if (valeur === 1) pour = 1;
-        else contre = 1;
+        await tx.vote.create({ data: { userId: user.id, suggestionId, valeur: 1 } });
       }
 
       await tx.suggestion.update({
         where: { id: suggestionId },
-        data: {
-          votesPour: { increment: pour },
-          votesContre: { increment: contre },
-          score: { increment: pour - contre },
-        },
+        data: { votesPour: { increment: delta }, score: { increment: delta } },
       });
     });
   } catch (e) {

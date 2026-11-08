@@ -6,110 +6,82 @@ import { useRouter } from "next/navigation";
 import { voter } from "@/app/actions";
 import { useFeuilleCompte } from "@/components/feuille-compte";
 import { Icone } from "@/components/icone";
-import { pourcentagePour } from "@/lib/format";
 
-type Etat = { pour: number; contre: number; monVote: number };
+/** Il n'y a pas de vote « contre » : un vote est un soutien, qu'un second clic retire. */
+type Etat = { pour: number; soutenu: boolean };
 
-function appliquerVote(etat: Etat, valeur: 1 | -1): Etat {
-  let { pour, contre } = etat;
-  if (etat.monVote === 1) pour--;
-  if (etat.monVote === -1) contre--;
-  if (etat.monVote === valeur) return { pour, contre, monVote: 0 };
-  if (valeur === 1) pour++;
-  else contre++;
-  return { pour, contre, monVote: valeur };
+// Le second paramètre (l'action) est inutile : chaque clic bascule le soutien.
+function basculer(etat: Etat): Etat {
+  return etat.soutenu ? { pour: etat.pour - 1, soutenu: false } : { pour: etat.pour + 1, soutenu: true };
 }
 
 type PropsVote = {
   suggestionId: number;
   pour: number;
-  contre: number;
+  /** Vote de l'habitant connecté : 1 s'il soutient l'idée, 0 sinon. */
   monVote: number;
   connecte: boolean;
 };
 
-/** Vote optimiste : l'affichage suit le clic, le serveur confirme ensuite. Un visiteur voit la feuille de compte. */
-function useVote({ suggestionId, pour, contre, monVote, connecte }: PropsVote) {
+/** Soutien optimiste : l'affichage suit le clic, le serveur confirme ensuite. Un visiteur voit la feuille de compte. */
+function useSoutien({ suggestionId, pour, monVote, connecte }: PropsVote) {
   const router = useRouter();
   const ouvrirFeuille = useFeuilleCompte();
-  const [etat, voterOptimiste] = useOptimistic({ pour, contre, monVote }, appliquerVote);
+  const [etat, basculerOptimiste] = useOptimistic({ pour, soutenu: monVote === 1 }, basculer);
   const [, demarrer] = useTransition();
   const [echec, setEchec] = useState(false);
-  // Petit rebond du bouton « Pour » à chaque soutien (désactivé par prefers-reduced-motion, voir globals.css).
+  // Petit rebond du bouton à chaque soutien (désactivé par prefers-reduced-motion, voir globals.css).
   const [rebond, setRebond] = useState(false);
 
-  function cliquer(valeur: 1 | -1, apres?: (suivant: number) => void) {
+  function cliquer(apres?: (soutenu: boolean) => void) {
     if (!connecte) return ouvrirFeuille();
     setEchec(false);
-    const suivant = etat.monVote === valeur ? 0 : valeur;
-    if (suivant === 1) setRebond(true);
+    const suivant = !etat.soutenu;
+    if (suivant) setRebond(true);
     apres?.(suivant);
     demarrer(async () => {
-      voterOptimiste(valeur);
-      const { statut } = await voter(suggestionId, valeur);
+      basculerOptimiste(null);
+      const { statut } = await voter(suggestionId);
       if (statut === "non-connecte") router.push(`/connexion?next=${encodeURIComponent(window.location.pathname)}`);
       if (statut === "erreur") setEchec(true);
     });
   }
 
-  return { etat, cliquer, echec, rebond, finRebond: () => setRebond(false), pct: pourcentagePour(etat.pour, etat.contre) };
+  return { etat, cliquer, echec, rebond, finRebond: () => setRebond(false) };
 }
 
-const classeBouton = "inline-flex items-center justify-center gap-1.5 rounded-full border font-bold whitespace-nowrap transition-colors";
+const classeBouton =
+  "inline-flex items-center justify-center gap-1.5 rounded-full border font-bold whitespace-nowrap transition-colors";
 
-function stylePour(actif: boolean, fort = false) {
+function styleSoutien(actif: boolean, fort = false) {
   if (actif) return "border-foret bg-foret text-white";
-  return fort ? "border-foret bg-carte text-foret-fonce hover:bg-foret/8" : "border-trait bg-carte text-encre hover:border-foret";
+  return fort
+    ? "border-foret bg-carte text-foret-fonce hover:bg-foret/8"
+    : "border-trait bg-carte text-encre hover:border-foret";
 }
 
-/** « Contre » s'affiche en encre : la tomate reste réservée aux erreurs. */
-function styleContre(actif: boolean) {
-  return actif ? "border-encre bg-encre text-white" : "border-trait bg-carte text-encre hover:border-encre";
-}
+const libelleSoutiens = (n: number) => (n > 1 ? "voisins soutiennent" : "voisin soutient");
 
-/** Vote dans une carte du fil : jauge de soutien, puis boutons Pour / Contre et actions secondaires. */
+/** Soutien dans une carte du fil : bouton « Je soutiens N », puis actions secondaires. */
 export function Vote(props: PropsVote & { children?: ReactNode }) {
-  const { etat, cliquer, echec, rebond, finRebond, pct } = useVote(props);
+  const { etat, cliquer, echec, rebond, finRebond } = useSoutien(props);
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div>
-        <div className="mb-1.5 flex justify-between gap-2 text-[13px]">
-          <span>
-            <strong className="font-bold tabular-nums">{etat.pour}</strong>{" "}
-            <span className="text-gris">{etat.pour > 1 ? "voisins soutiennent" : "voisin soutient"}</span>
-          </span>
-          <span className="text-gris">{etat.pour + etat.contre === 0 ? "Pas encore de vote" : `${pct} % pour`}</span>
-        </div>
-        <div aria-hidden className="h-1.5 overflow-hidden rounded-full bg-sable">
-          <div className="h-full rounded-full bg-foret transition-[width] duration-400" style={{ width: `${pct}%` }} />
-        </div>
-      </div>
-
       <div className="-mx-1 flex items-center gap-1.5">
         <button
           type="button"
           onAnimationEnd={finRebond}
-          aria-pressed={etat.monVote === 1}
-          onClick={() => cliquer(1)}
-          className={`${classeBouton} h-11 px-3.5 text-sm ${stylePour(etat.monVote === 1)} ${rebond ? "pop" : ""}`}
+          aria-pressed={etat.soutenu}
+          onClick={() => cliquer()}
+          className={`${classeBouton} h-11 px-3.5 text-sm ${styleSoutien(etat.soutenu)} ${rebond ? "pop" : ""}`}
         >
           <Icone nom="pour" taille={17} />
-          Pour <span className="tabular-nums">{etat.pour}</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={etat.monVote === -1}
-          onClick={() => cliquer(-1)}
-          className={`${classeBouton} h-11 px-3.5 text-sm ${styleContre(etat.monVote === -1)}`}
-        >
-          <Icone nom="contre" taille={17} />
-          <span className="sr-only">Contre</span>
-          <span className="tabular-nums">{etat.contre}</span>
+          Je soutiens <span className="tabular-nums">{etat.pour}</span>
         </button>
         {props.children}
       </div>
-      {echec && <p className="erreur">Votre vote n&apos;a pas été enregistré. Réessayez.</p>}
+      {echec && <p className="erreur">Votre soutien n&apos;a pas été enregistré. Réessayez.</p>}
     </div>
   );
 }
@@ -120,58 +92,41 @@ type PropsAvis = PropsVote & {
 };
 
 /**
- * Avis sur la fiche idée : synthèse des votes, puis barre d'action Pour · Contre · Favori · Partager.
+ * Soutiens sur la fiche idée, puis barre d'action Je soutiens · Favori · Partager.
  * Sur mobile, la barre est fixée en bas de l'écran ; sur grand écran, elle reste dans le bloc.
  */
 export function AvisIdee({ actions, ...props }: PropsAvis) {
-  const { etat, cliquer, echec, rebond, finRebond, pct } = useVote(props);
+  const { etat, cliquer, echec, rebond, finRebond } = useSoutien(props);
   const [toast, setToast] = useState(false);
-  const total = etat.pour + etat.contre;
 
-  function voterAvecToast(valeur: 1 | -1) {
-    cliquer(valeur, (suivant) => {
-      setToast(suivant === 1);
-      if (suivant === 1) window.setTimeout(() => setToast(false), 4000);
+  function soutenirAvecToast() {
+    cliquer((soutenu) => {
+      setToast(soutenu);
+      if (soutenu) window.setTimeout(() => setToast(false), 4000);
     });
   }
 
   return (
     <>
       <section aria-labelledby="titre-avis" className="carte rounded-[20px] p-4">
-        <h2 id="titre-avis" className="titre-bloc">
-          <span className="tabular-nums">{etat.pour}</span>{" "}
-          {etat.pour > 1 ? "voisins soutiennent" : "voisin soutient"} cette idée
-        </h2>
-        <div aria-hidden className="mt-3.5 mb-2 flex h-3 gap-0.5 overflow-hidden rounded-full bg-sable">
-          {total > 0 && (
-            <>
-              <span className="rounded-full bg-foret transition-[width] duration-400" style={{ width: `${pct}%` }} />
-              <span className="flex-1 rounded-full bg-[repeating-linear-gradient(135deg,#bdb3a0_0_3px,#ece4d3_3px_6px)]" />
-            </>
-          )}
-        </div>
-        <div className="flex justify-between gap-2 text-[13.5px]">
-          <span>
-            <strong className="text-foret-fonce">{pct} % pour</strong> <span className="text-gris">({etat.pour})</span>
+        <div className="flex items-center gap-3">
+          <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-foret/12 text-foret-fonce">
+            <Icone nom="pour" taille={22} />
           </span>
-          <span className="text-gris">
-            {etat.contre} contre · {total} vote{total > 1 ? "s" : ""}
-          </span>
+          <h2 id="titre-avis" className="titre-bloc">
+            <span className="tabular-nums">{etat.pour}</span> {libelleSoutiens(etat.pour)} cette idée
+          </h2>
         </div>
-        {etat.monVote !== 0 && (
+        {etat.soutenu && (
           <p className="mt-3 flex items-center gap-2 border-t border-sable-clair pt-1 text-[13.5px] font-semibold text-foret-fonce">
             <Icone nom="valider" taille={16} epaisseur={2.6} />
-            {etat.monVote === 1 ? "Vous soutenez cette idée" : "Vous avez voté contre"}
-            <button
-              type="button"
-              onClick={() => voterAvecToast(etat.monVote as 1 | -1)}
-              className="ml-auto min-h-11 text-encre underline"
-            >
-              Annuler
+            Vous soutenez cette idée
+            <button type="button" onClick={soutenirAvecToast} className="ml-auto min-h-11 text-encre underline">
+              Retirer mon soutien
             </button>
           </p>
         )}
-        {echec && <p className="erreur">Votre vote n&apos;a pas été enregistré. Réessayez.</p>}
+        {echec && <p className="erreur">Votre soutien n&apos;a pas été enregistré. Réessayez.</p>}
 
         {/* Barre d'action : fixée en bas sur mobile, intégrée au bloc sur grand écran. */}
         <div
@@ -182,22 +137,12 @@ export function AvisIdee({ actions, ...props }: PropsAvis) {
           <button
             type="button"
             onAnimationEnd={finRebond}
-            aria-pressed={etat.monVote === 1}
-            onClick={() => voterAvecToast(1)}
-            className={`${classeBouton} h-[50px] flex-1 border-[1.5px] px-4 text-base ${stylePour(etat.monVote === 1, true)} ${rebond ? "pop" : ""}`}
+            aria-pressed={etat.soutenu}
+            onClick={soutenirAvecToast}
+            className={`${classeBouton} h-[50px] flex-1 border-[1.5px] px-4 text-base ${styleSoutien(etat.soutenu, true)} ${rebond ? "pop" : ""}`}
           >
             <Icone nom="pour" taille={20} />
-            Pour <span className="tabular-nums">{etat.pour}</span>
-          </button>
-          <button
-            type="button"
-            aria-pressed={etat.monVote === -1}
-            onClick={() => voterAvecToast(-1)}
-            className={`${classeBouton} h-[50px] border-[1.5px] px-4 text-base ${styleContre(etat.monVote === -1)}`}
-          >
-            <Icone nom="contre" taille={20} />
-            <span className="tabular-nums">{etat.contre}</span>
-            <span className="sr-only">Contre</span>
+            Je soutiens <span className="tabular-nums">{etat.pour}</span>
           </button>
           {actions}
         </div>
@@ -210,7 +155,7 @@ export function AvisIdee({ actions, ...props }: PropsAvis) {
               <Icone nom="valider" taille={16} epaisseur={3} />
             </span>
             <span className="flex-1">Merci ! Votre soutien est enregistré.</span>
-            <button type="button" onClick={() => voterAvecToast(1)} className="min-h-11 font-bold underline">
+            <button type="button" onClick={soutenirAvecToast} className="min-h-11 font-bold underline">
               Annuler
             </button>
           </div>

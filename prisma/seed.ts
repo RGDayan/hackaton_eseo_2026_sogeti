@@ -86,7 +86,7 @@ type Idee = {
   tags: string[];
   position?: [number, number];
   auteur: string;
-  /** Nombre de votes pour et contre, attribués dans l'ordre de la liste des voisins. */
+  /** Nombre de soutiens (le second nombre, ancien « contre », est ignoré), attribués dans l'ordre des voisins. */
   votes: [number, number];
   ilYaJours: number;
 };
@@ -298,7 +298,8 @@ async function main() {
     }
 
     for (const idee of idees[ville.slug] ?? []) {
-      const [pour, contre] = idee.votes;
+      // Seul le premier nombre compte : il n'y a plus de vote « contre ».
+      const [pour] = idee.votes;
       const suggestion = await prisma.suggestion.create({
         data: {
           titre: idee.titre,
@@ -306,8 +307,8 @@ async function main() {
           latitude: idee.position?.[0],
           longitude: idee.position?.[1],
           votesPour: pour,
-          votesContre: contre,
-          score: pour - contre,
+          votesContre: 0,
+          score: pour,
           createdAt: joursAvant(idee.ilYaJours),
           auteur: { connect: { id: ids.get(idee.auteur)! } },
           categorie: { connect: { slug: idee.categorie } },
@@ -319,10 +320,10 @@ async function main() {
       });
 
       await prisma.vote.createMany({
-        data: voisins.slice(0, pour + contre).map((nickname, i) => ({
+        data: voisins.slice(0, pour).map((nickname) => ({
           userId: ids.get(nickname)!,
           suggestionId: suggestion.id,
-          valeur: i < pour ? 1 : -1,
+          valeur: 1,
         })),
       });
     }

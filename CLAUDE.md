@@ -8,13 +8,13 @@ Ce fichier récapitule le projet, ce qui a été fait et ce qui reste à faire. 
 
 **Quartea** (anciennement Place Commune) est une plateforme de **démocratie participative**, réalisée pour le **hackathon ESEO 2026 × Sogeti**.
 
-Les habitants proposent des idées pour leur quartier, les situent sur une carte, y joignent des documents et votent pour ou contre celles de leurs voisins.
+Les habitants proposent des idées pour leur quartier, les situent sur une carte, y joignent des documents et soutiennent celles de leurs voisins.
 
 - **Démo** : le **08/11/2026**, oral de **5 minutes**. Villes de démo : **Dijon Métropole** et **Grand Besançon Métropole**.
 - **Une seule application pour toutes les villes.** L'habitant choisit sa ville via l'en-tête (« Changer de ville » ouvre la page `/villes`), et le choix est gardé dans le cookie `pc_ville`. Tout est filtré par ville : fil, carte, filtres, chiffres, formulaire. La charte graphique de la ville est appliquée à l'interface.
 - **Authentification Keycloak** (OIDC). Rôles :
   - **visiteur** (sans compte) : consulte ;
-  - **habitant** (tout compte) : propose des idées et vote ;
+  - **habitant** (tout compte) : propose des idées et les soutient (pas de vote « contre ») ;
   - **modérateur d'une ville** (groupe Keycloak `/villes/<slug>/moderateurs`) : masque, rétablit ou supprime les idées de sa ville, gère ses quartiers et crée des catégories ;
   - **super-admin** (rôle `super-admin`) : gère tout, y compris les villes et les catégories.
 - **Mode démo** (`MODE_DEMO=true`) : 4 profils fictifs connectés sans Keycloak. C'est le filet de sécurité de l'oral. Jamais en production.
@@ -46,12 +46,12 @@ Les habitants proposent des idées pour leur quartier, les situent sur une carte
 
 - **Cadre** : en-tête (monogramme et nom de la ville, « Changer de ville » ; sur desktop, liens, « Proposer » et compte). Sur mobile, **barre d'onglets** en bas (Explorer, Carte, Proposer au centre, Chiffres, Mon espace ou Connexion), masquée sur la fiche idée et dans le formulaire.
 - **Accueil (`/`)** : hero aux couleurs de la ville (titre, boutons Proposer et Explorer la carte, empilés sous 420 px), « En ce moment » (8 idées les plus soutenues, carrousel avec flèches Précédent / Suivant, `components/carrousel.tsx`), puis fil paginé (8 par page), recherche, filtres en pastilles (quartier, catégorie, tag, tri). Sur mobile, bascule Liste / Carte par `?vue=carte` ; sur desktop, liste et carte côte à côte. États vides distincts (aucun résultat, ville sans idée).
-- **Idée (`/idees/[id]`)** : visuel (première photo, sinon picto de la catégorie), bloc d'avis et barre d'action Pour · Contre · Favori · Partager (fixée en bas sur mobile, colonne collante sur desktop), toast après un soutien, documents, emplacement, commentaires, idées proches. `?nouvelle=1` affiche la confirmation après publication. Le panneau de modération apparaît pour la modération de la ville. Une idée masquée renvoie 404 aux autres.
+- **Idée (`/idees/[id]`)** : visuel (première photo, sinon picto de la catégorie), bloc de soutiens et barre d'action Je soutiens · Favori · Partager (fixée en bas sur mobile, colonne collante sur desktop), toast après un soutien, documents, emplacement, commentaires, idées proches. `?nouvelle=1` affiche la confirmation après publication. Le panneau de modération apparaît pour la modération de la ville. Une idée masquée renvoie 404 aux autres.
 - **Visiteur qui vote ou met en favori** : feuille « Créez un compte en 20 secondes » (`<dialog>` natif, `components/feuille-compte.tsx`) au lieu d'une redirection.
 - **Proposer (`/idees/nouvelle`)** : écran intermédiaire pour les visiteurs ; parcours en 4 étapes pour les habitants (idée, lieu, précisions, relecture), un seul `<form>` dont les étapes inactives sont masquées :
   - on choisit d'abord le quartier, et seules les catégories liées à ce quartier sont proposées ;
   - le serveur vérifie que le quartier appartient à la ville courante et que la catégorie est liée au quartier ; ses erreurs ramènent à la bonne étape, avec un récapitulatif.
-- **Mon espace (`/moi`)** : onglets Mes idées, Mes votes, Mes favoris (toutes villes), liens modération/admin, déconnexion. `/favoris` y redirige (`next.config.ts`).
+- **Mon espace (`/moi`)** : onglets Mes idées, Mes soutiens, Mes favoris (toutes villes), liens modération/admin, déconnexion. `/favoris` y redirige (`next.config.ts`).
 - **Chiffres (`/dashboard`)** : public ; l'ancien bloc « Vos propositions » est passé dans Mon espace.
 - **Connexion (`/connexion`)** : boutons « Se connecter » et « Créer un compte » vers Keycloak, encadré du mode démo, messages d'erreur (Keycloak indisponible, connexion annulée…).
 - **Routes `/auth/*`** :
@@ -126,7 +126,7 @@ Après une modification du schéma : `npx prisma generate`, **puis redémarrer `
 | `Categorie` (`categories`) | Partagée entre villes. `couleur` sert au texte des badges, avec un contraste vérifié |
 | `Suggestion` (`suggestions`) | Une catégorie, un quartier (donc une ville), un auteur, des tags. Compteurs `votesPour`, `votesContre` et `score`. Modération : `masquee`, `motifMasquage`, `masqueeLe`, `masqueeParId` |
 | `User` (`users`) | `nickname`, `nicknameKey` (unique, en minuscules), `keycloakId?` (unique ; absent pour les comptes du mode démo) |
-| `Vote` (`votes`) | Clé `(userId, suggestionId)`, `valeur` +1 ou -1 |
+| `Vote` (`votes`) | Clé `(userId, suggestionId)`, `valeur` toujours +1 (soutien). Le « contre » a été retiré (migration `20261108120000_suppression_votes_contre`) ; `votes_contre` reste à 0 et `score` égale `votes_pour` |
 | `PieceJointe`, `Tag` | Inchangés depuis le MVP |
 
 - **Migrations** : `20261107121342_init`, puis `20261107200000_multi_villes_keycloak`. Cette dernière, écrite à la main, conserve les données existantes : l'ancienne colonne texte `ville` devient des lignes de `villes`.
@@ -174,7 +174,7 @@ docker-compose.yml
 - **Droits revérifiés dans chaque action** (`peutModerer`…) : masquer un bouton ne suffit pas. Côté pages, `exigerModerateur` et `exigerSuperAdmin`.
 - Toute entrée utilisateur passe par zod. Toute couleur saisie passe le contrôle de contraste.
 - **Mobile first** : styles de base pour le mobile (375 px), puis `sm:`, `md:` et `lg:` pour élargir. La navigation passe de la barre d'onglets du bas aux liens de l'en-tête à partir de `lg`. Aucun débordement horizontal toléré.
-- **Design** (maquette Claude Design) : couleurs du thème dans `globals.css` (`papier`, `carte`, `encre`, `gris`, `trait`, `sable`, `tomate`…), seules `foret`, `foret-fonce` et `soleil` changent par ville. Titres en Fraunces, boutons en pilule (`bouton-plein`, `bouton-contour`, `bouton-grand`), cibles tactiles de 44 px minimum. Le vote « contre » est en encre : la tomate est réservée aux erreurs. Pictos via `<Icone nom="…" />`.
+- **Design** (maquette Claude Design) : couleurs du thème dans `globals.css` (`papier`, `carte`, `encre`, `gris`, `trait`, `sable`, `tomate`…), seules `foret`, `foret-fonce` et `soleil` changent par ville. Titres en Fraunces, boutons en pilule (`bouton-plein`, `bouton-contour`, `bouton-grand`), cibles tactiles de 44 px minimum. Pas de vote « contre » : un vote est un soutien (`valeur` = 1), un second clic le retire. La tomate est réservée aux erreurs. Pictos via `<Icone nom="…" />`.
 - Les fichiers serveur importent `server-only`. La carte Leaflet est chargée côté client uniquement et démontée quand la route est cachée (`<Activity>`).
 - **Git** : branche par fonctionnalité depuis `develop`, puis PR vers `develop`. Commits en français.
 - **Uniquement des données fictives** (seed, tests, comptes de démo, captures). Aucune donnée personnelle réelle.

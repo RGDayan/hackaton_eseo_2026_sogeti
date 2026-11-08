@@ -21,11 +21,6 @@ export function pluriel(n: number, singulier: string, plurielForme = `${singulie
   return `${nombre.format(n)} ${n > 1 ? plurielForme : singulier}`;
 }
 
-export function pourcentagePour(pour: number, contre: number) {
-  const total = pour + contre;
-  return total === 0 ? 0 : Math.round((pour / total) * 100);
-}
-
 const formatDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const formatDateCourte = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 

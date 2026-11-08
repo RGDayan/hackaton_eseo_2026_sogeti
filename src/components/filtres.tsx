@@ -111,7 +111,7 @@ export function Filtres({ actifs, vue, quartiers, categories, tags }: Props) {
             valeur={actifs.tri}
             options={[
               { valeur: "recentes", libelle: "Récentes" },
-              { valeur: "mieux-notees", libelle: "Mieux notées" },
+              { valeur: "mieux-notees", libelle: "Plus soutenues" },
             ]}
           />
           {filtre && (

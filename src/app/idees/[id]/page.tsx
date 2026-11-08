@@ -136,7 +136,6 @@ async function Idee({
             <AvisIdee
               suggestionId={idee.id}
               pour={idee.votesPour}
-              contre={idee.votesContre}
               monVote={mesVotes[idee.id] ?? 0}
               connecte={connecte}
               actions={
@@ -246,7 +245,6 @@ async function Idee({
                         latitude: idee.latitude,
                         longitude: idee.longitude,
                         votesPour: idee.votesPour,
-                        votesContre: idee.votesContre,
                         categorie: idee.categorie.nom,
                         couleur: idee.categorie.couleur,
                       },

@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Mon espace · Quartea" };
 
 const ONGLETS = [
   { id: "idees", libelle: "Mes idées" },
-  { id: "votes", libelle: "Mes votes" },
+  { id: "votes", libelle: "Mes soutiens" },
   { id: "favoris", libelle: "Mes favoris" },
 ] as const;
 
@@ -66,7 +66,7 @@ async function MonEspace({ searchParams }: { searchParams: PageProps<"/moi">["se
         <dl className="grid grid-cols-3 gap-2">
           {[
             { n: nombres.idees, lib: nombres.idees > 1 ? "idées proposées" : "idée proposée" },
-            { n: nombres.votes, lib: nombres.votes > 1 ? "votes" : "vote" },
+            { n: nombres.votes, lib: nombres.votes > 1 ? "soutiens" : "soutien" },
             { n: activite.commentaires, lib: activite.commentaires > 1 ? "commentaires" : "commentaire" },
           ].map((c) => (
             <div key={c.lib} className="flex flex-col-reverse rounded-2xl border border-trait bg-carte px-3 py-2.5">
@@ -120,7 +120,7 @@ async function MonEspace({ searchParams }: { searchParams: PageProps<"/moi">["se
         {onglet === "votes" &&
           (activite.votes.length === 0 ? (
             <Vide
-              titre="Vous n'avez pas encore voté"
+              titre="Vous ne soutenez encore aucune idée"
               texte="Soutenez les idées de vos voisins : chaque vote compte pour la ville."
               lien={{ href: "/#fil", libelle: "Parcourir les idées" }}
             />
