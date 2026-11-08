@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BoutonJaime } from "@/components/jaime";
 import { Visite3D } from "@/components/visite-lazy";
-import { getMesLikes, getSuggestion } from "@/lib/queries";
-import { estModerateur, getUtilisateur } from "@/lib/session";
-import { estIdValide } from "@/lib/validation";
+import { Vote } from "@/components/vote";
+import { peutModerer } from "@/lib/droits";
+import { getMesVotes, getSuggestion } from "@/lib/queries";
+import { getUtilisateur } from "@/lib/session";
 import { chargerBatiments } from "@/lib/visite/batiments";
 import { choisirScenario } from "@/lib/visite/scenarios";
 
@@ -27,13 +27,12 @@ export default function PageVisite({ params }: PageProps<"/idees/[id]/visite">) 
 
 async function Visite({ params }: { params: PageProps<"/idees/[id]/visite">["params"] }) {
   const id = Number((await params).id);
-  if (!estIdValide(id)) notFound();
+  if (!Number.isInteger(id) || id < 1 || id > 2147483647) notFound();
 
-  const [idee, utilisateur, moderateur] = await Promise.all([getSuggestion(id), getUtilisateur(), estModerateur()]);
+  const [idee, utilisateur] = await Promise.all([getSuggestion(id), getUtilisateur()]);
   if (!idee) notFound();
-
-  const publiee = idee.statut === "PUBLIEE";
-  if (!publiee && utilisateur?.id !== idee.auteurId && !moderateur) notFound();
+  // Comme la fiche : une idée masquée n'est visible que par la modération de sa ville.
+  if (idee.masquee && !peutModerer(utilisateur, idee.localisation.ville.slug)) notFound();
 
   // Sans position précise, la visite se fait au centre du quartier.
   const precise = idee.latitude !== null && idee.longitude !== null;
@@ -42,7 +41,7 @@ async function Visite({ params }: { params: PageProps<"/idees/[id]/visite">["par
     longitude: idee.longitude ?? idee.localisation.longitude,
   };
 
-  const [batiments, mesLikes] = await Promise.all([chargerBatiments(origine), getMesLikes(utilisateur?.id, [id])]);
+  const [batiments, mesVotes] = await Promise.all([chargerBatiments(origine), getMesVotes(utilisateur?.id, [id])]);
   const scenario = choisirScenario(idee.titre, idee.description, idee.categorie.slug);
 
   return (
@@ -78,13 +77,8 @@ async function Visite({ params }: { params: PageProps<"/idees/[id]/visite">["par
             (BD ORTHO, BD TOPO).
           </p>
         </div>
-        {publiee && (
-          <BoutonJaime
-            suggestionId={id}
-            likes={idee.likes}
-            aime={mesLikes.has(id)}
-            connecte={Boolean(utilisateur)}
-          />
+        {!idee.masquee && (
+          <Vote suggestionId={id} pour={idee.votesPour} monVote={mesVotes[id] ?? 0} connecte={Boolean(utilisateur)} />
         )}
       </section>
     </>

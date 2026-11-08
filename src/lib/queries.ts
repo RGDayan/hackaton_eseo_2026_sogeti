@@ -162,6 +162,10 @@ export async function getSuggestion(id: number) {
       ...champsCarte,
       latitude: true,
       longitude: true,
+      // Centre du quartier : point de départ de la visite 3D quand l'idée n'a pas de position précise.
+      localisation: {
+        select: { ...champsCarte.localisation.select, latitude: true, longitude: true },
+      },
       masquee: true,
       motifMasquage: true,
       masqueeLe: true,

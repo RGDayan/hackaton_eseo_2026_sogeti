@@ -181,3 +181,19 @@ dialog.feuille::backdrop {
     animation: none;
   }
 }
+
+/* Visite 3D : choix segmentés (avec / sans l'idée, points de vue) et commandes de déplacement. */
+@layer components {
+  .choix-segmente {
+    @apply inline-flex rounded-full bg-sable p-[3px];
+  }
+  .choix-segmente > button {
+    @apply min-h-10 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap text-encre;
+  }
+  .choix-segmente > button[aria-pressed="true"] {
+    @apply bg-carte font-bold text-foret-fonce shadow-[0_1px_3px_rgb(0_0_0/0.12)];
+  }
+  .commande-visite {
+    @apply flex size-11 items-center justify-center rounded-full border border-trait bg-carte text-lg font-bold text-encre shadow-[0_2px_8px_rgb(28_43_36/0.12)] hover:border-foret;
+  }
+}

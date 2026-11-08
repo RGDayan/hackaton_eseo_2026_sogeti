@@ -229,6 +229,20 @@ async function Idee({
               </section>
             )}
 
+            <Link
+              href={`/idees/${idee.id}/visite`}
+              className="flex min-h-14 items-center gap-3 rounded-[18px] border border-trait bg-carte px-4 py-3 transition-colors hover:border-foret"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-foret/12 text-foret-fonce">
+                <Icone nom="carte" taille={20} />
+              </span>
+              <span className="flex-1">
+                <span className="block text-[15px] font-bold">Visiter le terrain en 3D</span>
+                <span className="text-[13px] text-gris">Une simulation de l&apos;idée, sur la photo aérienne du lieu</span>
+              </span>
+              <Icone nom="droite" taille={18} className="text-gris" />
+            </Link>
+
             {idee.latitude !== null && idee.longitude !== null && (
               <section aria-labelledby="titre-lieu" className="flex flex-col gap-2.5">
                 <h2 id="titre-lieu" className="titre-bloc">
