@@ -1,4 +1,4 @@
-# Services de développement de Place Commune.
+# Services de développement de Quartea.
 #   docker compose up -d                 → Keycloak (http://localhost:8080) et sa base
 #   docker compose --profile db up -d    → + PostgreSQL de l'application (port 5433)
 #

@@ -1,13 +1,16 @@
 "use client";
 
-export default function Erreur({ retry }: { error: Error; retry: () => void }) {
+import { PageSysteme } from "@/components/page-systeme";
+
+export default function Erreur({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
-    <div className="py-24 text-center">
-      <h1 className="font-titre text-3xl font-semibold text-foret">Un problème est survenu</h1>
-      <p className="mt-2 text-gris">Les idées n&apos;ont pas pu être chargées. Réessayez dans un instant.</p>
-      <button type="button" onClick={() => retry()} className="bouton-plein mt-6">
-        Réessayer
-      </button>
-    </div>
+    <PageSysteme
+      grand="Oups"
+      titre="Quelque chose s'est mal passé"
+      texte="Ce n'est pas de votre fait. Réessayez dans un instant : vos votes sont conservés."
+      reessayer={retry}
+      actions={[{ href: "/", libelle: "Retour à l'accueil" }]}
+      reference={error.digest}
+    />
   );
 }

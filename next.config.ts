@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  async redirects() {
+    // Les favoris vivent désormais dans Mon espace.
+    return [{ source: "/favoris", destination: "/moi?onglet=favoris", permanent: false }];
+  },
   experimental: {
     serverActions: {
       // 3 fichiers de 5 Mo maximum, plus le reste du formulaire.

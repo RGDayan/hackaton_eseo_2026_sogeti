@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { supprimerCommentaire } from "@/app/actions";
+import { Icone } from "@/components/icone";
 
 export function SupprimerCommentaire({ commentaireId }: { commentaireId: number }) {
   const [enCours, demarrer] = useTransition();
@@ -17,16 +18,21 @@ export function SupprimerCommentaire({ commentaireId }: { commentaireId: number 
   }
 
   return (
-    <span className="ml-auto flex items-center gap-2">
-      {echec && <span className="text-xs text-tomate">Suppression impossible.</span>}
+    <span className="-mb-1.5 -ml-1.5 flex items-center gap-2">
       <button
         type="button"
         onClick={cliquer}
         disabled={enCours}
-        className="text-xs text-gris hover:text-tomate hover:underline disabled:opacity-50"
+        className="flex min-h-9 items-center gap-1 px-1.5 text-[13px] font-semibold text-tomate-fonce hover:underline disabled:opacity-50"
       >
+        <Icone nom="poubelle" taille={14} />
         {enCours ? "Suppression…" : "Supprimer"}
       </button>
+      {echec && (
+        <span role="alert" className="text-xs font-semibold text-tomate">
+          Suppression impossible.
+        </span>
+      )}
     </span>
   );
 }

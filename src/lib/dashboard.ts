@@ -105,20 +105,3 @@ export async function getTableauDeBord(villeId: number) {
     parQuartier,
   };
 }
-
-/** Les idées proposées par l'habitant connecté, et les votes qu'elles ont réunis. */
-export async function getEspacePerso(userId: number) {
-  await connection();
-
-  const miennes = await prisma.suggestion.findMany({
-    where: { auteurId: userId, masquee: false },
-    orderBy: { createdAt: "desc" },
-    take: 60,
-    select: selectResume,
-  });
-
-  return {
-    miennes,
-    votesRecus: miennes.reduce((total, i) => total + i.votesPour + i.votesContre, 0),
-  };
-}

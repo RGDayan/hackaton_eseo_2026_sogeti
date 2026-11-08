@@ -5,7 +5,7 @@
  * on y lit la ville et l'origine de l'application (redirect_uri, déjà validée par Keycloak), puis on
  * récupère la charte via GET <app>/api/villes/<slug>/theme. Elle est gardée en sessionStorage pour les
  * pages suivantes (mauvais mot de passe, inscription…), dont l'URL ne contient plus ces paramètres.
- * Sans JavaScript, la charte par défaut de Place Commune s'applique.
+ * Sans JavaScript, la charte par défaut de Quartea s'applique.
  */
 (function () {
   "use strict";

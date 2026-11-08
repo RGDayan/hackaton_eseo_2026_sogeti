@@ -1,13 +1,15 @@
-import Link from "next/link";
+import { PageSysteme } from "@/components/page-systeme";
 
 export default function Introuvable() {
   return (
-    <div className="py-24 text-center">
-      <h1 className="font-titre text-3xl font-semibold text-foret">Cette page n&apos;existe pas</h1>
-      <p className="mt-2 text-gris">L&apos;idée a peut-être été retirée, ou le lien est incorrect.</p>
-      <Link href="/" className="bouton-plein mt-6">
-        Retour aux idées
-      </Link>
-    </div>
+    <PageSysteme
+      grand="404"
+      titre="Cette page n'existe pas ou a été retirée"
+      texte="Le lien est peut-être incomplet, ou l'idée a été masquée par la modération."
+      actions={[
+        { href: "/", libelle: "Explorer les idées" },
+        { href: "/idees/nouvelle", libelle: "Proposer une idée" },
+      ]}
+    />
   );
 }
