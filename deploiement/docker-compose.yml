@@ -1,0 +1,140 @@
+# Production de Quartea : une seule URL publique, en HTTPS.
+#
+#   cd deploiement
+#   cp .env.example .env      # puis remplir les valeurs
+#   docker compose up -d --build
+#
+#   https://<DOMAINE>/      → application Next.js
+#   https://<DOMAINE>/kc/   → Keycloak (pas /auth : ce chemin appartient aux routes OIDC de l'app)
+#
+# Seuls les ports 80 et 443 (Caddy) sont exposés. Bases, Keycloak et app restent sur le réseau interne.
+
+name: place-commune
+
+x-base-app: &base-app
+  DATABASE_URL: postgresql://place_commune:${POSTGRES_PASSWORD:?}@postgres:5432/place_commune
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAINE: ${DOMAINE:?}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      default:
+        # Le serveur Next appelle Keycloak via l'URL publique (l'issuer doit être identique pour le
+        # navigateur et le serveur). Cet alias la résout directement vers Caddy, sans sortir sur Internet.
+        aliases:
+          - ${DOMAINE:?}
+    depends_on:
+      - app
+      - keycloak
+
+  app:
+    build:
+      context: ..
+      target: app
+    image: place-commune-app
+    restart: unless-stopped
+    environment:
+      <<: *base-app
+      SESSION_SECRET: ${SESSION_SECRET:?}
+      VILLE_PAR_DEFAUT: ${VILLE_PAR_DEFAUT:-dijon}
+      APP_URL: https://${DOMAINE}
+      KEYCLOAK_ISSUER: https://${DOMAINE}/kc/realms/place-commune
+      KEYCLOAK_CLIENT_ID: place-commune-web
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:?}
+      MODE_DEMO: "false"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
+  # Applique les migrations puis le seed (idempotent : il n'ajoute les idées de démo
+  # qu'aux villes qui n'en ont aucune), puis s'arrête. Rejoué à chaque `up`.
+  migrations:
+    build:
+      context: ..
+      target: outils
+    image: place-commune-outils
+    restart: "no"
+    environment:
+      <<: *base-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: place_commune
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: place_commune
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U place_commune -d place_commune"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    restart: unless-stopped
+    command: start --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?}
+      # Derrière Caddy : TLS terminé par le proxy, URL publique fixe sous /kc.
+      KC_HOSTNAME: https://${DOMAINE}/kc
+      KC_HTTP_RELATIVE_PATH: /kc
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      # Valeurs injectées dans le realm à l'import (placeholders de realm-place-commune.json).
+      PC_APP_URL: https://${DOMAINE}
+      PC_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:?}
+      PC_MDP_DEMO: ${MDP_COMPTES_DEMO:?}
+    volumes:
+      # Realm importé au premier démarrage seulement (ignoré s'il existe déjà en base).
+      - ../keycloak/realm-place-commune.json:/opt/keycloak/data/import/realm-place-commune.json:ro
+      - ../keycloak/themes/place-commune:/opt/keycloak/themes/place-commune:ro
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+
+  keycloak-db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?}
+      POSTGRES_DB: keycloak
+    volumes:
+      - keycloak-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  caddy-data:
+  caddy-config:
+  postgres-data:
+  keycloak-data:
+  uploads:

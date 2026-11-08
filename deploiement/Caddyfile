@@ -1,0 +1,16 @@
+# Reverse proxy et HTTPS automatique (Let's Encrypt) pour Quartea.
+# DOMAINE vient de deploiement/.env, par exemple 51-75-10-20.sslip.io.
+
+{$DOMAINE} {
+	encode zstd gzip
+
+	# Keycloak : pages de connexion, endpoints OIDC et console d'administration.
+	handle /kc* {
+		reverse_proxy keycloak:8080
+	}
+
+	# Tout le reste, y compris /auth/login, /auth/callback et /auth/logout (flux OIDC de l'app).
+	handle {
+		reverse_proxy app:3000
+	}
+}

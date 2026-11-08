@@ -72,23 +72,23 @@
       "protocol": "openid-connect",
       "publicClient": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "dev-secret-a-changer-en-production",
+      "secret": "${PC_CLIENT_SECRET:dev-secret-a-changer-en-production}",
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "frontchannelLogout": true,
-      "rootUrl": "http://localhost:3000",
+      "rootUrl": "${PC_APP_URL:http://localhost:3000}",
       "baseUrl": "/",
       "redirectUris": [
-        "http://localhost:3000/auth/callback"
+        "${PC_APP_URL:http://localhost:3000}/auth/callback"
       ],
       "webOrigins": [
-        "http://localhost:3000"
+        "${PC_APP_URL:http://localhost:3000}"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:3000/*"
+        "post.logout.redirect.uris": "${PC_APP_URL:http://localhost:3000}/*"
       },
       "defaultClientScopes": [
         "web-origins",
@@ -141,7 +141,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Demo2026!",
+          "value": "${PC_MDP_DEMO:Demo2026!}",
           "temporary": false
         }
       ],
@@ -155,7 +155,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Demo2026!",
+          "value": "${PC_MDP_DEMO:Demo2026!}",
           "temporary": false
         }
       ],
@@ -172,7 +172,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Demo2026!",
+          "value": "${PC_MDP_DEMO:Demo2026!}",
           "temporary": false
         }
       ],
@@ -189,7 +189,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Demo2026!",
+          "value": "${PC_MDP_DEMO:Demo2026!}",
           "temporary": false
         }
       ],

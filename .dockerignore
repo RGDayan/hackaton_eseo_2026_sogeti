@@ -1,0 +1,20 @@
+# Contexte de build Docker : uniquement les sources.
+.git
+node_modules
+.next
+uploads
+src/generated
+generated
+gitignore
+.vscode
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+
+# Secrets et configuration locale : jamais dans l'image.
+.env*
+
+# Fichiers de déploiement inutiles dans l'image
+Dockerfile
+docker-compose*.yml
+deploiement

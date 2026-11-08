@@ -41,6 +41,7 @@ Les habitants proposent des idées pour leur quartier, les situent sur une carte
 | Branche `feature/multi-villes-keycloak` | Multi-villes, Keycloak, modération (`83eaa72`) ; thème Keycloak (`d3b7220`) ; administration (`9e02f02`) ; documentation. |
 | PR #5, #6 | Commentaires ; tableau de bord et favoris. |
 | Branche `feature/refonte-front` | Refonte UI d'après la maquette Claude Design « Place Commune - Mobile » (mobile 390 px, adaptée au desktop). |
+| Branche `feature/deploiement` | Dockerfile, `deploiement/` (Compose de prod + Caddy), realm paramétré par variables d'environnement. Stack testée en local de bout en bout (connexion OIDC via Caddy). |
 
 ### Fonctionnalités en place
 
@@ -76,7 +77,7 @@ Les habitants proposent des idées pour leur quartier, les situent sur une carte
 - **Streaming** : `notFound()` et `redirect()` appelés dans un `<Suspense>` répondent avec un statut 200. La page 404 ou la redirection fonctionne côté navigateur.
 - **Maquette non reprise faute de données** : statut d'avancement d'une idée et « réponse de la ville », visionneuse de photos, idées similaires pendant la saisie, brouillon conservé, QR code de partage, refonte de la modération et de l'admin.
 - **Pièces jointes sur disque local** : passer à un stockage S3 avant d'avoir plusieurs réplicas.
-- **Déploiement** : pas encore fait (voir le cadrage ci-dessous).
+- **Déploiement** : fichiers prêts et testés en local (voir la section Déploiement), pas encore mis en ligne sur le serveur (Oracle Always Free ou VPS OVH).
 
 ## Stack
 
@@ -163,7 +164,9 @@ lib/
   format.ts         # nomCourt, monogramme, pluriel, dates, tailles de fichier
   uploads.ts        # fichiers joints
 keycloak/realm-place-commune.json, keycloak/themes/place-commune/
-docker-compose.yml
+docker-compose.yml  # dev : Keycloak (+ PostgreSQL avec --profile db)
+Dockerfile          # cibles `app` (standalone) et `outils` (prisma migrate deploy + seed)
+deploiement/        # prod : docker-compose.yml, Caddyfile, .env.example, README.md (guide serveur)
 ```
 
 ## Conventions
@@ -179,13 +182,17 @@ docker-compose.yml
 - **Git** : branche par fonctionnalité depuis `develop`, puis PR vers `develop`. Commits en français.
 - **Uniquement des données fictives** (seed, tests, comptes de démo, captures). Aucune donnée personnelle réelle.
 
-## Cadrage du déploiement (à réaliser, Docker Compose simplifié)
+## Déploiement (`deploiement/`, guide dans `deploiement/README.md`)
 
+- **Lancement** : sur le serveur, `cd deploiement && cp .env.example .env`, remplir le fichier, puis `docker compose up -d --build`.
 - **Services** :
-  - `app` : image Next.js `output: 'standalone'`, `prisma migrate deploy` au démarrage, volume `uploads/` ;
-  - `postgres` : base de l'app ;
-  - `keycloak` : mode `start`, avec sa propre base et le thème monté ;
-  - `caddy` : reverse proxy et HTTPS.
-- **Une seule URL publique** : l'app sur `/`, Keycloak sur `/auth` (`KC_HTTP_RELATIVE_PATH=/auth`, `KC_PROXY_HEADERS=xforwarded`). Il n'y a alors pas de problème entre domaines, ni pour les cookies ni pour la route de thème.
-- **L'issuer doit être stable et identique** pour le navigateur et le serveur (`KC_HOSTNAME=https://<domaine>/auth`). Les URL aléatoires des quick tunnels Cloudflare ne conviennent donc pas : il faut un domaine fixe, par exemple le domaine statique gratuit de ngrok ou un tunnel Cloudflare nommé.
-- **À adapter** : les redirect URIs du client Keycloak et `APP_URL` selon l'environnement ; `MODE_DEMO=false` en production ; un nouveau secret client.
+  - `caddy` : seul service exposé (80/443), HTTPS Let's Encrypt automatique ;
+  - `app` : image `standalone` (`output: "standalone"` dans `next.config.ts`), volume `uploads` ;
+  - `migrations` : cible `outils` du Dockerfile, `prisma migrate deploy` puis le seed (idempotent), puis arrêt. `app` attend qu'il ait réussi ;
+  - `postgres`, et `keycloak` en mode `start` avec sa base `keycloak-db` et le thème monté.
+- **Une seule URL publique** : l'app sur `/`, **Keycloak sur `/kc`** (`KC_HTTP_RELATIVE_PATH=/kc`, `KC_HOSTNAME=https://<domaine>/kc`, `KC_PROXY_HEADERS=xforwarded`). Ce n'est pas `/auth`, qui est occupé par les routes OIDC de l'app.
+- **Domaine sans achat** : `DOMAINE=<ip-avec-tirets>.sslip.io` (ou `nip.io`). Il doit être fixé avant le premier lancement.
+- **Issuer identique pour le navigateur et le serveur** : le serveur Next appelle `https://<DOMAINE>/kc`. Dans le compose, un alias réseau fait résoudre `DOMAINE` vers Caddy, ce qui évite de sortir sur Internet.
+- **Realm paramétré** : `realm-place-commune.json` contient des placeholders Keycloak `${PC_APP_URL:…}`, `${PC_CLIENT_SECRET:…}` et `${PC_MDP_DEMO:…}`. Les valeurs par défaut sont celles du dev. La prod injecte son URL, son secret client et le mot de passe des comptes de démo, qui diffère du `Demo2026!` public. L'import n'a lieu qu'au premier démarrage.
+- **`MODE_DEMO=false` en production**, en dur dans le compose : on se connecte uniquement par Keycloak.
+- **Mémoire** : environ 900 Mo au total, dont 700 Mo pour Keycloak. Il faut 2 Go minimum.
